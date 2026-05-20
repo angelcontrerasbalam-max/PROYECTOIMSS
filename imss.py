@@ -1,6 +1,8 @@
+%%writefile app.py
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def main():
     # Set page configuration for a formal, executive style
@@ -54,7 +56,7 @@ def main():
     st.title("DEPARTAMENTO DE AFILIACIÓN Y VIGENCIA SUB DELEGACIÓN 33 LA CEIBA")
 
     # Load the data
-    file_path = 'DATOS/PATRONES PROYECTO FINAL.xlsx'
+    file_path = '/content/drive/MyDrive/PATRONES PROYECTO FINAL.xlsx'
     df = pd.read_excel(file_path)
 
     # --- Data Preprocessing ---
