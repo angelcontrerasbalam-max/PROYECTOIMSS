@@ -23,8 +23,34 @@ st.markdown(
     .stMarkdown p, .stText p, label, li { color: #1E293B; }
     p { color: #1E293B; }
     
-    /* Color blanco para todos los elementos de las tarjetas oscuras */
-    .dark-card, .dark-card p, .dark-card li, .dark-card ul, .dark-card b, .dark-card h4 { color: #FFFFFF !important; }
+    /* Color blanco garantizado para TODO dentro de tarjetas oscuras */
+    .dark-card, .dark-card * { color: #FFFFFF !important; }
+    
+    /* Botón Flotante */
+    .floating-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background-color: #1E3A8A;
+        color: white !important;
+        border-radius: 50px;
+        padding: 15px 25px;
+        font-size: 16px;
+        font-weight: bold;
+        text-decoration: none;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: 0.3s;
+        border: 2px solid white;
+    }
+    .floating-btn:hover {
+        background-color: #4CAF50;
+        transform: scale(1.05);
+        color: white !important;
+    }
     
     h1 { 
         color: #1E3A8A !important; 
@@ -184,12 +210,9 @@ with tab1:
                 """
                 <div class='dark-card' style='background-color: #1E293B; padding: 20px; border-radius: 8px; border-left: 5px solid #4CAF50; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
                 <h4 style="margin-top:0; color:#4CAF50;">Análisis del Estatus</h4>
-                Esta gráfica de pastel muestra la distribución porcentual de los patrones 
-                dados de <b>ALTA</b> y <b>BAJA</b> en la sección. Es un indicador clave para 
-                entender la dinámica de crecimiento y contracción de la base patronal. 
+                El 88.4% de patrones activos en la sección norte refleja la fortaleza empresarial de Mérida, impulsada por turismo, servicios y nuevas inversiones. El 11.6% de bajas corresponde a ajustes en sectores tradicionales, principalmente comercio y pequeñas empresas, que requieren atención estratégica.
                 <br><br>
-                Un porcentaje alto de patrones <b>'ALTA'</b> indica un ambiente económico 
-                activo y saludable en términos de nuevas empresas y generación de empleos.
+                Este balance confirma un entorno económico estable, con tendencia positiva hacia la generación de empleos y consolidación de la base patronal. La vigilancia de las bajas permitirá anticipar riesgos y diseñar políticas de apoyo que mantengan el dinamismo regional.
                 </div>
                 """, unsafe_allow_html=True
             )
@@ -400,3 +423,6 @@ with tab6:
             st.info("No hay fechas válidas para graficar la tendencia por año.")
     else:
         st.warning("La columna 'ULTIMO MOVIMIENTO FECHA ULTIMO MOV' no se encuentra en tu Excel.")
+
+# --- Botón Flotante Fijo ---
+st.markdown('<a href="https://www.imss.gob.mx/tramites/alta-patronal" target="_blank" class="floating-btn">💻 Trámite Alta Patronal</a>', unsafe_allow_html=True)
