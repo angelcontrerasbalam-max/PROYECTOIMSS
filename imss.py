@@ -15,19 +15,27 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    .main { background-color: #F0F2F6; }
-    .stApp { background-color: #F0F2F6; }
+    /* Forzar fondo claro y texto oscuro para evitar problemas con el modo oscuro automático */
+    .stApp { background-color: #F0F2F6 !important; }
+    .main { background-color: #F0F2F6 !important; }
+    
+    /* Forzar color oscuro en los textos normales de Streamlit */
+    .stMarkdown p, .stText p, label, li, .stDataFrame { color: #1E293B !important; }
+    p { color: #1E293B !important; }
+    
     h1 { 
-        color: #1E3A8A; 
+        color: #1E3A8A !important; 
         text-align: center;
         font-size: 2.5em;
         padding-bottom: 20px;
         font-family: 'Arial', sans-serif;
     }
-    h2, h3 { color: #1E3A8A; font-family: 'Arial', sans-serif; }
+    h2, h3, h4 { color: #1E3A8A !important; font-family: 'Arial', sans-serif; }
+    
     .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
         font-size: 1.1em;
         font-weight: bold;
+        color: #1E3A8A !important;
     }
     .stTabs [data-baseweb="tab-list"] button {
         background-color: #E0E7FF; 
