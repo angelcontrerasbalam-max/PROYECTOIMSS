@@ -19,9 +19,9 @@ st.markdown(
     .stApp { background-color: #F0F2F6 !important; }
     .main { background-color: #F0F2F6 !important; }
     
-    /* Forzar color oscuro en los textos normales de Streamlit */
-    .stMarkdown p, .stText p, label, li, .stDataFrame { color: #1E293B !important; }
-    p { color: #1E293B !important; }
+    /* Forzar color oscuro en los textos normales de Streamlit (sin !important para permitir el color de las tarjetas) */
+    .stMarkdown p, .stText p, label, li { color: #1E293B; }
+    p { color: #1E293B; }
     
     h1 { 
         color: #1E3A8A !important; 
@@ -102,9 +102,9 @@ if registro_patronal_input:
                 
                 # Función para extraer datos del string
                 def parse_location(location_string):
-                    cabinet_match = re.search(r'ARCHIVERO\s*(\d+)', location_string, re.IGNORECASE)
+                    cabinet_match = re.search(r'A[R]?CHIVERO\s*(\d+)', location_string, re.IGNORECASE)
                     fila_match = re.search(r'FILA\s*(\d+)', location_string, re.IGNORECASE)
-                    seccion_match = re.search(r'SECCI[OÓ]N\s*([A-G])', location_string, re.IGNORECASE)
+                    seccion_match = re.search(r'SECCI[OÓ]?N\s*([A-G])', location_string, re.IGNORECASE)
                     
                     cabinet = int(cabinet_match.group(1)) if cabinet_match else None
                     fila = int(fila_match.group(1)) if fila_match else None
@@ -179,8 +179,8 @@ with tab1:
             st.markdown("<br><br>", unsafe_allow_html=True)
             st.markdown(
                 """
-                <div style='background-color: #FFFFFF; padding: 20px; border-radius: 8px; border-left: 5px solid #1E3A8A; box-shadow: 0px 4px 6px rgba(0,0,0,0.05);'>
-                <h4 style="margin-top:0; color:#1E3A8A;">Análisis del Estatus</h4>
+                <div style='background-color: #1E293B; color: #F8F9FA; padding: 20px; border-radius: 8px; border-left: 5px solid #4CAF50; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
+                <h4 style="margin-top:0; color:#4CAF50;">Análisis del Estatus</h4>
                 Esta gráfica de pastel muestra la distribución porcentual de los patrones 
                 dados de <b>ALTA</b> y <b>BAJA</b> en la sección. Es un indicador clave para 
                 entender la dinámica de crecimiento y contracción de la base patronal. 
@@ -208,7 +208,7 @@ with tab2:
                 st.markdown("<br><br>", unsafe_allow_html=True)
                 st.markdown(
                     """
-                    <div style='background-color: #FFFFFF; padding: 20px; border-radius: 8px; border-left: 5px solid #E74C3C; box-shadow: 0px 4px 6px rgba(0,0,0,0.05);'>
+                    <div style='background-color: #1E293B; color: #F8F9FA; padding: 20px; border-radius: 8px; border-left: 5px solid #E74C3C; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
                     <h4 style="margin-top:0; color:#E74C3C;">Motivos Legales de Baja</h4>
                     Esta gráfica ilustra las razones principales por las cuales los registros patronales son dados de baja. 
                     <br><br>
@@ -236,7 +236,7 @@ with tab3:
         st.pyplot(fig3)
         st.markdown(
             """
-            <div style='background-color: #FFFFFF; padding: 20px; border-radius: 8px; border-left: 5px solid #27AE60; box-shadow: 0px 4px 6px rgba(0,0,0,0.05);'>
+            <div style='background-color: #1E293B; color: #F8F9FA; padding: 20px; border-radius: 8px; border-left: 5px solid #27AE60; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
             <h4 style="margin-top:0; color:#27AE60;">Contexto Económico de Yucatán</h4>
             Este gráfico de barras muestra las actividades económicas predominantes entre los patrones de la delegación.
             <ul>
@@ -286,7 +286,7 @@ with tab4:
 
         st.markdown(
             """
-            <div style='background-color: #FFFFFF; padding: 20px; border-radius: 8px; border-left: 5px solid #F39C12; box-shadow: 0px 4px 6px rgba(0,0,0,0.05);'>
+            <div style='background-color: #1E293B; color: #F8F9FA; padding: 20px; border-radius: 8px; border-left: 5px solid #F39C12; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
             <h4 style="margin-top:0; color:#F39C12;">¿Qué es la Prima de Riesgo de Trabajo del IMSS?</h4>
             Es una cuota obligatoria que los patrones pagan al IMSS para cubrir la probabilidad de ocurrencia de accidentes o enfermedades laborales de sus trabajadores. Esta cuota financia las prestaciones médicas y económicas.
             <br><br>
@@ -320,7 +320,7 @@ with tab5:
 
         st.markdown(
             """
-            <div style='background-color: #FFFFFF; padding: 20px; border-radius: 8px; border-left: 5px solid #8E44AD; box-shadow: 0px 4px 6px rgba(0,0,0,0.05);'>
+            <div style='background-color: #1E293B; color: #F8F9FA; padding: 20px; border-radius: 8px; border-left: 5px solid #8E44AD; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
             <h4 style="margin-top:0; color:#8E44AD;">Sectores Intensivos en Mano de Obra</h4>
             Este análisis promedia el número de trabajadores por actividad económica, mostrando qué sectores emplean a más personal por unidad económica de manera directa.
             <br><br>
@@ -345,8 +345,8 @@ with tab6:
             st.pyplot(fig6a)
             st.markdown(
                 """
-                <div style='background-color: #F8F9FA; padding: 15px; border-radius: 5px; font-size: 0.9em;'>
-                <b>Tipos de Movimientos (IMSS):</b>
+                <div style='background-color: #1E293B; color: #F8F9FA; padding: 15px; border-radius: 5px; font-size: 0.9em; border-left: 4px solid #3498DB;'>
+                <b style='color:#3498DB;'>Tipos de Movimientos (IMSS):</b>
                 <ul>
                     <li><b>Alta:</b> Inscripción inicial del patrón ante el IMSS adquiriendo obligaciones.</li>
                     <li><b>Baja:</b> Clausura o terminación definitiva de la relación obrero-patronal.</li>
@@ -370,8 +370,8 @@ with tab6:
             st.pyplot(fig6c)
             st.markdown(
                 """
-                <div style='background-color: #F8F9FA; padding: 15px; border-radius: 5px; font-size: 0.9em;'>
-                <b>Digitalización de Trámites:</b><br>
+                <div style='background-color: #1E293B; color: #F8F9FA; padding: 15px; border-radius: 5px; font-size: 0.9em; border-left: 4px solid #E74C3C;'>
+                <b style='color:#E74C3C;'>Digitalización de Trámites:</b><br>
                 El <b>IMSS</b> está impulsando intensivamente su plataforma digital y el Buzón IMSS. 
                 El objetivo primordial es que los patrones puedan realizar sus movimientos a través de <b>INTERNET</b> para evitar que tengan que ir físicamente a la subdelegación, eliminando filas, agilizando la actualización y reduciendo los tiempos de respuesta de forma significativa.
                 </div>
