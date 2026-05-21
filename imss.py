@@ -2,390 +2,390 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import re # For parsing the file location string
+import re
 
-# --- Page Configuration --- #
+# --- Configuración de la Página --- #
 st.set_page_config(
     page_title="DEPARTAMENTO DE AFILIACIÓN Y VIGENCIA SUB DELEGACIÓN 33 LA CEIBA",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- Custom CSS for styling (formal, executive look) ---
+# --- CSS Personalizado (Estilo Formal/Ejecutivo) ---
 st.markdown(
     """
     <style>
-    .main { 
-        background-color: #F0F2F6; /* Light grey background */
-    }
-    .stApp {
-        background-color: #F0F2F6;
-    }
+    .main { background-color: #F0F2F6; }
+    .stApp { background-color: #F0F2F6; }
     h1 { 
-        color: #1E3A8A; /* Dark blue for title */
+        color: #1E3A8A; 
         text-align: center;
         font-size: 2.5em;
         padding-bottom: 20px;
+        font-family: 'Arial', sans-serif;
     }
-    h2 {
-        color: #1E3A8A;
-    }
+    h2, h3 { color: #1E3A8A; font-family: 'Arial', sans-serif; }
     .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
-        font-size:1.2em;
-    }
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 24px;
+        font-size: 1.1em;
+        font-weight: bold;
     }
     .stTabs [data-baseweb="tab-list"] button {
-        background-color: #E0E7FF; /* Light blue for tabs */
-        border-radius: 4px 4px 0px 0px;
+        background-color: #E0E7FF; 
+        border-radius: 5px 5px 0px 0px;
         padding: 10px 15px;
-        border-bottom: 2px solid #1E3A8A;
+        border-bottom: 3px solid transparent;
     }
     .stTabs [data-baseweb="tab-list"] button:hover {
-        border-bottom: 2px solid #4CAF50; /* Green on hover */
+        border-bottom: 3px solid #4CAF50; 
     }
     .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
-        border-bottom: 2px solid #007BFF; /* Active tab blue */
-    }
-    .reportview-container .main .block-container{ 
-        padding-top: 2rem; 
-        padding-bottom: 2rem;
-    }
-    .stTextInput>div>div>input {
-        padding: 10px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-    }
-    .stButton>button {
-        background-color: #4CAF50; /* Green button */
-        color: white;
-        padding: 10px 20px;
-        border-radius: 5px;
-        border: none;
+        border-bottom: 3px solid #1E3A8A; 
+        background-color: #FFFFFF;
     }
     </style>
     """, unsafe_allow_html=True
 )
 
-# --- Title ---
+# --- Título ---
 st.title('DEPARTAMENTO DE AFILIACIÓN Y VIGENCIA SUB DELEGACIÓN 33 LA CEIBA')
 
-# --- Data Loading ---
+# --- Carga y Limpieza de Datos ---
 @st.cache_data
 def load_data(file_path):
-    df = pd.read_excel(file_path)
-    # Ensure date column is datetime for potential time series analysis
-    if 'ULTIMO MOVIMIENTO FECHA ULTIMO MOV' in df.columns:
-        df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'] = pd.to_datetime(df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'], errors='coerce')
-    return df
+    try:
+        df = pd.read_excel(file_path)
+        # ESTA LÍNEA SOLUCIONA TU ERROR: Estandariza las columnas a mayúsculas y quita espacios invisibles
+        df.columns = df.columns.astype(str).str.strip().str.upper()
+        
+        if 'ULTIMO MOVIMIENTO FECHA ULTIMO MOV' in df.columns:
+            df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'] = pd.to_datetime(df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'], errors='coerce')
+        return df
+    except Exception as e:
+        st.error(f"Error al cargar el archivo Excel: {e}")
+        return pd.DataFrame()
 
+# Cargar el Dataframe
 file_path = 'DATOS/PATRONES PROYECTO FINAL.xlsx'
 df = load_data(file_path)
 
-# --- Search Bar and Patron Data Display ---
+if df.empty:
+    st.warning("No se pudo cargar la información. Por favor, verifica que el archivo Excel esté en la ruta 'DATOS/PATRONES PROYECTO FINAL.xlsx'.")
+    st.stop()
+
+# Función para evitar errores si no existe la columna en el Excel
+def check_col(col_name):
+    return col_name in df.columns
+
+# --- Buscador y Archivero Visual ---
 st.header('Búsqueda de Registro Patronal')
-registro_patronal_input = st.text_input('Ingresa el Registro Patronal para buscar:', '')
+registro_patronal_input = st.text_input('🔍 Ingresa el Registro Patronal para buscar:', '')
 
 if registro_patronal_input:
-    # Ensure the input matches the format of the 'REGISTRO PATRONAL' column
-    # Assuming the format is consistent, we'll try to find an exact match
-    filtered_patron = df[df['REGISTRO PATRONAL'].astype(str).str.contains(registro_patronal_input, case=False, na=False)]
-    
-    if not filtered_patron.empty:
-        st.subheader('Datos del Patrón Encontrado:')
-        st.dataframe(filtered_patron.reset_index(drop=True))
-
-        # --- Archivero Visualization (Simplified Text-based) ---
-        st.subheader('Ubicación del Archivo:')
-        location_str = filtered_patron['UBICACIÓN DE ARCHIVO'].iloc[0]
+    if check_col('REGISTRO PATRONAL'):
+        filtered_patron = df[df['REGISTRO PATRONAL'].astype(str).str.contains(registro_patronal_input, case=False, na=False)]
         
-        # Function to parse location string
-        def parse_location(location_string):
-            cabinet_match = re.search(r'ARCHIVERO (\d+)', location_string, re.IGNORECASE)
-            fila_match = re.search(r'FILA (\d+)', location_string, re.IGNORECASE)
-            seccion_match = re.search(r'SECCIÓN ([A-G])', location_string, re.IGNORECASE)
-            
-            cabinet = int(cabinet_match.group(1)) if cabinet_match else None
-            fila = int(fila_match.group(1)) if fila_match else None
-            seccion = seccion_match.group(1).upper() if seccion_match else None
-            
-            return cabinet, fila, seccion
+        if not filtered_patron.empty:
+            st.subheader('Datos del Patrón Encontrado:')
+            st.dataframe(filtered_patron.reset_index(drop=True), use_container_width=True)
 
-        cabinet, fila, seccion = parse_location(location_str)
+            if check_col('UBICACIÓN DE ARCHIVO'):
+                st.subheader('Ubicación Física del Archivo:')
+                location_str = str(filtered_patron['UBICACIÓN DE ARCHIVO'].iloc[0])
+                
+                # Función para extraer datos del string
+                def parse_location(location_string):
+                    cabinet_match = re.search(r'ARCHIVERO\s*(\d+)', location_string, re.IGNORECASE)
+                    fila_match = re.search(r'FILA\s*(\d+)', location_string, re.IGNORECASE)
+                    seccion_match = re.search(r'SECCI[OÓ]N\s*([A-G])', location_string, re.IGNORECASE)
+                    
+                    cabinet = int(cabinet_match.group(1)) if cabinet_match else None
+                    fila = int(fila_match.group(1)) if fila_match else None
+                    seccion = seccion_match.group(1).upper() if seccion_match else None
+                    return cabinet, fila, seccion
 
-        if cabinet and fila and seccion:
-            st.write(f"El archivo se encuentra en el **Archivero {cabinet}, Fila {fila}, Sección {seccion}**.")
-            
-            st.markdown("### Representación del Archivero:")
-            # Simple text-based representation
-            for c in range(1, 6): # 5 Archiveros
-                st.markdown(f"#### Archivero {c}")
-                for r in range(1, 8): # 7 Filas
-                    row_display = []
-                    for s_char in ['A', 'B', 'C', 'D', 'E', 'F', 'G']: # Columns A-G
-                        if c == cabinet and r == fila and s_char == seccion:
-                            row_display.append(f"**`[{s_char}]`**") # Highlighted
-                        else:
-                            row_display.append(f"` {s_char} `")
-                    st.markdown(" &nbsp; ".join(row_display))
-                st.markdown("--- ")
+                cabinet, fila, seccion = parse_location(location_str)
+
+                if cabinet and fila and seccion:
+                    st.success(f"📂 El archivo se encuentra en el **Archivero {cabinet}, Fila {fila}, Sección {seccion}**.")
+                    
+                    # Generar Representación Visual del Archivero en HTML/CSS
+                    st.markdown("### Representación Visual de los Archiveros:")
+                    html_archivero = "<div style='display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;'>"
+                    for c in range(1, 6): # 5 Archiveros
+                        border_color = "#4CAF50" if c == cabinet else "#1E3A8A"
+                        box_shadow = "box-shadow: 0px 4px 8px rgba(76, 175, 80, 0.6);" if c == cabinet else "box-shadow: 0px 2px 4px rgba(0,0,0,0.1);"
+                        
+                        html_archivero += f"<div style='border: 3px solid {border_color}; padding: 10px; border-radius: 8px; background: #FFFFFF; {box_shadow}'><h4 style='text-align:center; color:{border_color}; margin-top:0;'>Archivero {c}</h4><table style='border-collapse: collapse; width: 100%; font-size: 0.9em;'>"
+                        
+                        # Encabezados de columnas (A-G)
+                        html_archivero += "<tr><th style='padding: 5px;'></th>"
+                        for s_char in ['A', 'B', 'C', 'D', 'E', 'F', 'G']:
+                            html_archivero += f"<th style='padding: 5px; text-align: center; color: #555;'>{s_char}</th>"
+                        html_archivero += "</tr>"
+
+                        for r in range(1, 8): # 7 Filas
+                            html_archivero += "<tr><td style='padding: 5px; font-weight: bold; color: #555;'>F{r}</td>"
+                            for s_char in ['A', 'B', 'C', 'D', 'E', 'F', 'G']:
+                                if c == cabinet and r == fila and s_char == seccion:
+                                    bg, color, weight, text = "#4CAF50", "white", "bold", "📂"
+                                else:
+                                    bg, color, weight, text = "#F8F9FA", "#DDD", "normal", "X"
+                                html_archivero += f"<td style='border: 1px solid #ddd; background-color: {bg}; color: {color}; font-weight: {weight}; text-align: center; padding: 5px; width: 35px; height: 35px;'>{text}</td>"
+                            html_archivero += "</tr>"
+                        html_archivero += "</table></div>"
+                    html_archivero += "</div>"
+                    
+                    st.markdown(html_archivero, unsafe_allow_html=True)
+                else:
+                    st.warning(f"No se pudo descifrar la coordenada exacta del archivo a partir de: '{location_str}'. Asegúrate de que siga el formato: 'ARCHIVERO X', 'FILA X', 'SECCIÓN X'.")
+            else:
+                st.info("La columna 'UBICACIÓN DE ARCHIVO' no está disponible.")
         else:
-            st.warning(f"No se pudo parsear la ubicación del archivo: {location_str}")
+            st.warning('No se encontró ningún patrón con ese Registro Patronal.')
     else:
-        st.warning('No se encontró ningún patrón con ese Registro Patronal.')
+        st.error(f"⚠️ No se encontró la columna 'REGISTRO PATRONAL' en el Excel. Columnas detectadas: {', '.join(df.columns)}")
 
-st.markdown('---')
+st.markdown('<hr style="border-top: 3px solid #1E3A8A;">', unsafe_allow_html=True)
 
-# --- Tabs for Analysis ---
+# --- Pestañas de Análisis ---
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "Estatus Patronal", 
-    "Motivos de Baja", 
-    "Actividades Económicas", 
-    "Primas de Riesgo", 
-    "Trabajadores por Actividad", 
-    "Movimientos Afiliatorios"
+    "📊 Estatus Patronal", 
+    "📉 Motivos de Baja", 
+    "🏭 Actividades Económicas", 
+    "⚠️ Primas de Riesgo", 
+    "👷 Trabajadores por Actividad", 
+    "📑 Movimientos Afiliatorios"
 ])
 
 with tab1:
     st.header("ESTATUS PATRONAL SECCIÓN NORTE")
-    # Pie chart for 'ESTATUS'
-    estatus_counts = df['ESTATUS'].value_counts()
-    fig1, ax1 = plt.subplots(figsize=(8, 8))
-    ax1.pie(estatus_counts, labels=estatus_counts.index, autopct='%1.1f%%', startangle=90, colors=['#4CAF50', '#FFC107'])
-    ax1.axis('equal') # Equal aspect ratio ensures that pie is drawn as a circle.
-    st.pyplot(fig1)
-    st.markdown(
-        """
-        <div style='background-color: #E0E7FF; padding: 15px; border-radius: 5px;'>
-        Esta gráfica de pastel muestra la distribución porcentual de los patrones 
-        dados de **ALTA** y **BAJA** en la sección. Es un indicador clave para 
-        entender la dinámica de crecimiento y contracción de la base patronal. 
-        Un porcentaje alto de patrones 'ALTA' indica un ambiente económico 
-        activo y saludable en términos de nuevas empresas y empleos.
-        </div>
-        """, unsafe_allow_html=True
-    )
+    if check_col('ESTATUS'):
+        estatus_counts = df['ESTATUS'].value_counts()
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            fig1, ax1 = plt.subplots(figsize=(6, 6))
+            ax1.pie(estatus_counts, labels=estatus_counts.index, autopct='%1.1f%%', startangle=90, colors=['#4CAF50', '#E74C3C', '#F39C12'])
+            ax1.axis('equal')
+            st.pyplot(fig1)
+        with col2:
+            st.markdown("<br><br>", unsafe_allow_html=True)
+            st.markdown(
+                """
+                <div style='background-color: #FFFFFF; padding: 20px; border-radius: 8px; border-left: 5px solid #1E3A8A; box-shadow: 0px 4px 6px rgba(0,0,0,0.05);'>
+                <h4 style="margin-top:0; color:#1E3A8A;">Análisis del Estatus</h4>
+                Esta gráfica de pastel muestra la distribución porcentual de los patrones 
+                dados de <b>ALTA</b> y <b>BAJA</b> en la sección. Es un indicador clave para 
+                entender la dinámica de crecimiento y contracción de la base patronal. 
+                <br><br>
+                Un porcentaje alto de patrones <b>'ALTA'</b> indica un ambiente económico 
+                activo y saludable en términos de nuevas empresas y generación de empleos.
+                </div>
+                """, unsafe_allow_html=True
+            )
+    else:
+        st.error("Columna 'ESTATUS' no encontrada.")
 
 with tab2:
     st.header("PRINCIPALES MOTIVOS DE BAJA PATRONAL")
-    # Filter for 'BAJA' status and count motives
-    baja_motivos = df[df['ESTATUS'] == 'BAJA']['MOTIVO BAJA'].value_counts()
-    if not baja_motivos.empty:
-        fig2, ax2 = plt.subplots(figsize=(8, 8))
-        ax2.pie(baja_motivos, labels=baja_motivos.index, autopct='%1.1f%%', startangle=90, colors=sns.color_palette("pastel"))
-        ax2.axis('equal')
-        st.pyplot(fig2)
+    if check_col('ESTATUS') and check_col('MOTIVO BAJA'):
+        baja_motivos = df[df['ESTATUS'] == 'BAJA']['MOTIVO BAJA'].value_counts()
+        if not baja_motivos.empty:
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                fig2, ax2 = plt.subplots(figsize=(6, 6))
+                ax2.pie(baja_motivos, labels=baja_motivos.index, autopct='%1.1f%%', startangle=90, colors=sns.color_palette("pastel"))
+                ax2.axis('equal')
+                st.pyplot(fig2)
+            with col2:
+                st.markdown("<br><br>", unsafe_allow_html=True)
+                st.markdown(
+                    """
+                    <div style='background-color: #FFFFFF; padding: 20px; border-radius: 8px; border-left: 5px solid #E74C3C; box-shadow: 0px 4px 6px rgba(0,0,0,0.05);'>
+                    <h4 style="margin-top:0; color:#E74C3C;">Motivos Legales de Baja</h4>
+                    Esta gráfica ilustra las razones principales por las cuales los registros patronales son dados de baja. 
+                    <br><br>
+                    Según la <b>Ley del Instituto Mexicano del Seguro Social (IMSS)</b>, la baja de un registro patronal 
+                    puede ocurrir de forma obligatoria por la falta de localización del domicilio o el impago 
+                    de cuotas obrero-patronales prolongado. Estas situaciones conllevan a que el IMSS inicie procedimientos para 
+                    regularizar la situación o dar de baja el registro para proteger los fondos de recaudación del sistema y salvaguardar los derechos de los trabajadores.
+                    </div>
+                    """, unsafe_allow_html=True
+                )
+        else:
+            st.info("No hay datos de patrones con estatus 'BAJA' o motivos registrados para analizar.")
+    else:
+        st.error("Columnas 'ESTATUS' o 'MOTIVO BAJA' no encontradas.")
+
+with tab3:
+    st.header("PRINCIPALES ACTIVIDADES ECONÓMICAS DE PATRONES EN LA DELEGACIÓN NORTE")
+    if check_col('ACTIVIDAD'):
+        actividad_counts = df['ACTIVIDAD'].value_counts().head(10)
+        fig3, ax3 = plt.subplots(figsize=(10, 5))
+        sns.barplot(x=actividad_counts.values, y=actividad_counts.index, palette='viridis', ax=ax3)
+        ax3.set_title('Top 10 Actividades Económicas')
+        ax3.set_xlabel('Número de Patrones')
+        ax3.set_ylabel('')
+        st.pyplot(fig3)
         st.markdown(
             """
-            <div style='background-color: #E0E7FF; padding: 15px; border-radius: 5px;'>
-            Esta gráfica ilustra las razones principales por las cuales los registros patronales son dados de baja. 
-            Motivos como **'DOMICILIO NO LOCALIZADO'** o **'SUSPENSIÓN DE ACTIVIDADES'** suelen indicar situaciones 
-            en las que el patrón ya no cumple con sus obligaciones fiscales o de seguridad social.
-            <br><br>
-            Según la Ley del Instituto Mexicano del Seguro Social (IMSS), la baja de un registro patronal 
-            puede ocurrir por diversas razones, entre ellas, la falta de localización del domicilio o el impago 
-            de cuotas obrero-patronales. Estas situaciones conllevan a que el IMSS inicie procedimientos para 
-            regularizar la situación o, en su defecto, dar de baja el registro, afectando la continuidad de la 
-            cobertura de seguridad social para los trabajadores y la recaudación de fondos para el sistema.
+            <div style='background-color: #FFFFFF; padding: 20px; border-radius: 8px; border-left: 5px solid #27AE60; box-shadow: 0px 4px 6px rgba(0,0,0,0.05);'>
+            <h4 style="margin-top:0; color:#27AE60;">Contexto Económico de Yucatán</h4>
+            Este gráfico de barras muestra las actividades económicas predominantes entre los patrones de la delegación.
+            <ul>
+                <li><b>SERVICIOS:</b> En este grupo se encuentran actividades destinadas a brindar atención y soluciones para satisfacer necesidades de la población, como turismo, restaurantes, consultoría y servicios profesionales.</li>
+                <li><b>CONSTRUCCIÓN:</b> Engloba a empresas dedicadas a la edificación y desarrollo inmobiliario, siendo un motor de empleo temporal.</li>
+                <li><b>MANUFACTURA:</b> Comprende la transformación de materias primas en productos elaborados (ej. industria textil, aeroespacial y maquiladora).</li>
+            </ul>
+            En <b>Yucatán</b>, la diversificación económica ha impulsado enormemente el turismo y los servicios. Además, la construcción ha experimentado un auge histórico debido al crecimiento urbano, desarrollos inmobiliarios y proyectos de infraestructura en la región.
             </div>
             """, unsafe_allow_html=True
         )
     else:
-        st.info("No hay datos de patrones con estatus 'BAJA' para analizar los motivos.")
-
-with tab3:
-    st.header("PRINCIPALES ACTIVIDADES ECONÓMICAS DE PATRONES EN LA DELEGACIÓN NORTE")
-    # Bar chart for 'ACTIVIDAD'
-    actividad_counts = df['ACTIVIDAD'].value_counts().head(10) # Top 10 activities
-    fig3, ax3 = plt.subplots(figsize=(10, 6))
-    sns.barplot(x=actividad_counts.values, y=actividad_counts.index, palette='viridis', ax=ax3)
-    ax3.set_title('Top 10 Actividades Económicas')
-    ax3.set_xlabel('Número de Patrones')
-    ax3.set_ylabel('Actividad Económica')
-    st.pyplot(fig3)
-    st.markdown(
-        """
-        <div style='background-color: #E0E7FF; padding: 15px; border-radius: 5px;'>
-        Este gráfico de barras muestra las actividades económicas predominantes entre los patrones de la delegación.
-        Por ejemplo, el sector de **CONSTRUCCIÓN** engloba a empresas dedicadas a la edificación, 
-        infraestructura y desarrollo inmobiliario, siendo un motor importante de empleo. El sector de 
-        **SERVICIOS** puede incluir una amplia gama de actividades como consultoría, servicios profesionales, 
-        turismo, etc., que son fundamentales para la economía. La **FABRICACIÓN** o **INDUSTRIA MANUFACTURERA** 
-        comprende la transformación de materias primas en productos elaborados. 
-        <br><br>
-        En Yucatán, la diversificación económica ha impulsado sectores como el turismo, la manufactura 
-        (especialmente la industria textil y maquiladora), y los servicios, junto con el tradicional sector 
-        agropecuario. La construcción también ha experimentado un auge significativo debido al crecimiento 
-        urbano y turístico de la región.
-        </div>
-        """, unsafe_allow_html=True
-    )
+        st.error("Columna 'ACTIVIDAD' no encontrada.")
 
 with tab4:
     st.header("PRIMAS DE RIESGO PATRONALES")
-    
-    # Calculate change in prima de riesgo
-    df['CAMBIO PRIMA DE RIESGO'] = df['PRIMA DE RIESGO ACTUAL'] - df['PRIMA DE RIESGO ANTERIOR']
+    if check_col('PRIMA DE RIESGO ACTUAL') and check_col('PRIMA DE RIESGO ANTERIOR') and check_col('REGISTRO PATRONAL'):
+        df['PRIMA DE RIESGO ACTUAL'] = pd.to_numeric(df['PRIMA DE RIESGO ACTUAL'], errors='coerce').fillna(0)
+        df['PRIMA DE RIESGO ANTERIOR'] = pd.to_numeric(df['PRIMA DE RIESGO ANTERIOR'], errors='coerce').fillna(0)
+        df['CAMBIO PRIMA DE RIESGO'] = df['PRIMA DE RIESGO ACTUAL'] - df['PRIMA DE RIESGO ANTERIOR']
 
-    st.subheader('10 Patrones con Mayor Aumento en Prima de Riesgo')
-    top_increase = df.sort_values(by='CAMBIO PRIMA DE RIESGO', ascending=False).head(10)
-    st.dataframe(top_increase[['REGISTRO PATRONAL', 'NOMBRE', 'PRIMA DE RIESGO ANTERIOR', 'PRIMA DE RIESGO ACTUAL', 'CAMBIO PRIMA DE RIESGO']])
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader('📈 10 Patrones con Mayor Aumento')
+            top_increase = df.sort_values(by='CAMBIO PRIMA DE RIESGO', ascending=False).head(10)
+            cols_to_show = ['REGISTRO PATRONAL', 'PRIMA DE RIESGO ANTERIOR', 'PRIMA DE RIESGO ACTUAL', 'CAMBIO PRIMA DE RIESGO']
+            st.dataframe(top_increase[cols_to_show], use_container_width=True)
 
-    st.subheader('10 Patrones con Mayor Decremento en Prima de Riesgo')
-    top_decrease = df.sort_values(by='CAMBIO PRIMA DE RIESGO', ascending=True).head(10)
-    st.dataframe(top_decrease[['REGISTRO PATRONAL', 'NOMBRE', 'PRIMA DE RIESGO ANTERIOR', 'PRIMA DE RIESGO ACTUAL', 'CAMBIO PRIMA DE RIESGO']])
-    
-    # Trend graph (simple comparison)
-    fig4, ax4 = plt.subplots(figsize=(10, 6))
-    sns.scatterplot(x='PRIMA DE RIESGO ANTERIOR', y='PRIMA DE RIESGO ACTUAL', data=df, ax=ax4, hue='CAMBIO PRIMA DE RIESGO', size='CAMBIO PRIMA DE RIESGO', sizes=(20, 400), palette='coolwarm')
-    ax4.plot([df['PRIMA DE RIESGO ANTERIOR'].min(), df['PRIMA DE RIESGO ANTERIOR'].max()], 
-             [df['PRIMA DE RIESGO ANTERIOR'].min(), df['PRIMA DE RIESGO ANTERIOR'].max()], 
-             'r--', label='Sin Cambio')
-    ax4.set_title('Comparativa de Prima de Riesgo (Anterior vs. Actual)')
-    ax4.set_xlabel('Prima de Riesgo Anterior')
-    ax4.set_ylabel('Prima de Riesgo Actual')
-    ax4.legend()
-    st.pyplot(fig4)
+        with col2:
+            st.subheader('📉 10 Patrones con Mayor Decremento')
+            top_decrease = df.sort_values(by='CAMBIO PRIMA DE RIESGO', ascending=True).head(10)
+            st.dataframe(top_decrease[cols_to_show], use_container_width=True)
+        
+        # Gráfica de Tendencia
+        fig4, ax4 = plt.subplots(figsize=(10, 5))
+        sns.scatterplot(x='PRIMA DE RIESGO ANTERIOR', y='PRIMA DE RIESGO ACTUAL', data=df, ax=ax4, hue='CAMBIO PRIMA DE RIESGO', size='CAMBIO PRIMA DE RIESGO', sizes=(20, 300), palette='coolwarm')
+        
+        min_val = min(df['PRIMA DE RIESGO ANTERIOR'].min(), df['PRIMA DE RIESGO ACTUAL'].min())
+        max_val = max(df['PRIMA DE RIESGO ANTERIOR'].max(), df['PRIMA DE RIESGO ACTUAL'].max())
+        ax4.plot([min_val, max_val], [min_val, max_val], 'k--', label='Sin Cambio (Misma Prima)', alpha=0.5)
+        
+        ax4.set_title('Tendencia de Prima de Riesgo (Anterior vs. Actual)')
+        ax4.set_xlabel('Prima de Riesgo Anterior')
+        ax4.set_ylabel('Prima de Riesgo Actual')
+        ax4.legend()
+        st.pyplot(fig4)
 
-    st.markdown(
-        """
-        <div style='background-color: #E0E7FF; padding: 15px; border-radius: 5px;'>
-        Las primas de riesgo patronales son un componente crucial en la determinación de las cuotas 
-        que los empleadores deben pagar al IMSS. Representan la probabilidad de ocurrencia de 
-        accidentes de trabajo y enfermedades profesionales en una empresa. 
-        <br><br>
-        **¿Qué es la Prima de Riesgo para el IMSS?**
-        Es un porcentaje que se aplica a la base de cotización de los salarios de los trabajadores 
-        para calcular las cuotas del seguro de riesgos de trabajo. Su finalidad es financiar las 
-        prestaciones en especie y en dinero derivadas de accidentes y enfermedades laborales.
-        <br><br>
-        **¿De qué depende la asignación de la Prima de Riesgo?**
-        Depende de la clase de riesgo de la actividad económica de la empresa y de la siniestralidad 
-        registrada en el periodo de revisión. Cada actividad económica tiene una clase de riesgo 
-        establecida (de I a V, siendo V la de mayor riesgo). Además, anualmente, las empresas 
-        revisan su siniestralidad para determinar si su prima debe ser ajustada.
-        <br><br>
-        **¿De qué depende que aumente o baje la Prima de Riesgo?**
-        *   **Aumento:** Un aumento en la siniestralidad (mayor número de accidentes o enfermedades 
-            de trabajo) en el periodo de cómputo resultará en un incremento de la prima. También 
-            puede aumentar si la empresa cambia a una actividad económica de mayor riesgo.
-        *   **Disminución:** Una reducción en la siniestralidad, es decir, menos accidentes y 
-            enfermedades de trabajo, o la implementación de medidas de seguridad que mejoren las 
-            condiciones laborales, puede llevar a una disminución de la prima. Cambiar a una 
-            actividad de menor riesgo también la reduce.
-        <br><br>
-        Es fundamental para las empresas gestionar activamente la seguridad y salud en el trabajo 
-        para mantener una prima de riesgo baja, lo que se traduce en menores costos y un mejor 
-        ambiente laboral.
-        </div>
-        """, unsafe_allow_html=True
-    )
+        st.markdown(
+            """
+            <div style='background-color: #FFFFFF; padding: 20px; border-radius: 8px; border-left: 5px solid #F39C12; box-shadow: 0px 4px 6px rgba(0,0,0,0.05);'>
+            <h4 style="margin-top:0; color:#F39C12;">¿Qué es la Prima de Riesgo de Trabajo del IMSS?</h4>
+            Es una cuota obligatoria que los patrones pagan al IMSS para cubrir la probabilidad de ocurrencia de accidentes o enfermedades laborales de sus trabajadores. Esta cuota financia las prestaciones médicas y económicas.
+            <br><br>
+            <b>¿De qué depende la asignación de la Prima de Riesgo?</b><br>
+            Depende de la clase de riesgo de la actividad económica de la empresa (Clase I a V). Al inscribirse, a la empresa se le asigna una "prima media" correspondiente a su clase.
+            <br><br>
+            <b>¿De qué depende que aumente o baje la Prima de Riesgo?</b>
+            <ul>
+                <li><b>Aumento:</b> La prima sube si, tras la revisión anual de siniestralidad, se constata que ocurrieron más accidentes, enfermedades o defunciones por riesgo de trabajo en la empresa.</li>
+                <li><b>Disminución:</b> La prima baja si la empresa mejora sus protocolos de seguridad, logrando reducir o mantener su índice de siniestralidad al mínimo (menos accidentes o incapacidades).</li>
+            </ul>
+            <small><i>Toda esta información está estipulada según la Ley del Seguro Social.</i></small>
+            </div>
+            """, unsafe_allow_html=True
+        )
+    else:
+        st.error("Faltan columnas ('PRIMA DE RIESGO ACTUAL' o 'PRIMA DE RIESGO ANTERIOR') para este análisis.")
 
 with tab5:
     st.header("TRABAJADORES POR ACTIVIDAD")
-    # Relationship between ACTIVIDAD and TRABAJADORES
-    avg_workers_by_activity = df.groupby('ACTIVIDAD')['TRABAJADORES'].mean().sort_values(ascending=False)
-    
-    fig5, ax5 = plt.subplots(figsize=(10, 7))
-    sns.barplot(x=avg_workers_by_activity.values, y=avg_workers_by_activity.index, palette='magma', ax=ax5)
-    ax5.set_title('Número Promedio de Trabajadores por Actividad Económica')
-    ax5.set_xlabel('Promedio de Trabajadores')
-    ax5.set_ylabel('Actividad Económica')
-    st.pyplot(fig5)
+    if check_col('ACTIVIDAD') and check_col('TRABAJADORES'):
+        df['TRABAJADORES'] = pd.to_numeric(df['TRABAJADORES'], errors='coerce').fillna(0)
+        avg_workers_by_activity = df.groupby('ACTIVIDAD')['TRABAJADORES'].mean().sort_values(ascending=False).head(15)
+        
+        fig5, ax5 = plt.subplots(figsize=(10, 6))
+        sns.barplot(x=avg_workers_by_activity.values, y=avg_workers_by_activity.index, palette='magma', ax=ax5)
+        ax5.set_title('Promedio de Trabajadores por Sector Económico')
+        ax5.set_xlabel('Promedio de Empleados por Patrón')
+        ax5.set_ylabel('')
+        st.pyplot(fig5)
 
-    st.markdown(
-        """
-        <div style='background-color: #E0E7FF; padding: 15px; border-radius: 5px;'>
-        Este análisis relaciona el tipo de actividad económica con el número de trabajadores, 
-        mostrando un promedio de empleados por sector. Permite identificar qué actividades 
-        son más intensivas en mano de obra. Por ejemplo, sectores como la **CONSTRUCCIÓN** 
-        o la **FABRICACIÓN** suelen requerir un mayor número de personal para sus operaciones, 
-        lo que los clasifica como sectores intensivos en mano de obra. En contraste, 
-        actividades de **CONSULTORÍA** o **SERVICIOS PROFESIONALES** pueden tener un promedio 
-        de trabajadores menor, indicando una mayor dependencia de capital humano especializado.
-        </div>
-        """, unsafe_allow_html=True
-    )
+        st.markdown(
+            """
+            <div style='background-color: #FFFFFF; padding: 20px; border-radius: 8px; border-left: 5px solid #8E44AD; box-shadow: 0px 4px 6px rgba(0,0,0,0.05);'>
+            <h4 style="margin-top:0; color:#8E44AD;">Sectores Intensivos en Mano de Obra</h4>
+            Este análisis promedia el número de trabajadores por actividad económica, mostrando qué sectores emplean a más personal por unidad económica de manera directa.
+            <br><br>
+            Actividades como la <b>CONSTRUCCIÓN</b>, <b>AGRICULTURA EXTENSIVA</b> o <b>MANUFACTURA MASIVA</b> suelen requerir grandes volúmenes de personal para operar, lo que las convierte en sectores "intensivos en mano de obra". En contraste, sectores como el comercio al detalle, servicios inmobiliarios o consultorías tienden a funcionar con planillas más reducidas y un mayor enfoque en el conocimiento.
+            </div>
+            """, unsafe_allow_html=True
+        )
+    else:
+        st.error("Columnas 'ACTIVIDAD' o 'TRABAJADORES' no encontradas.")
 
 with tab6:
     st.header("MOVIMIENTOS AFILIATORIOS")
 
-    st.subheader('Tipos de Movimientos Realizados')
-    movimiento_counts = df['TIPO DE MOVIMIENTO'].value_counts()
-    fig6a, ax6a = plt.subplots(figsize=(8, 8))
-    ax6a.pie(movimiento_counts, labels=movimiento_counts.index, autopct='%1.1f%%', startangle=90, colors=sns.color_palette("cool"))
-    ax6a.axis('equal')
-    st.pyplot(fig6a)
-    st.markdown(
-        """
-        <div style='background-color: #E0E7FF; padding: 15px; border-radius: 5px;'>
-        Esta gráfica muestra la distribución de los diferentes tipos de movimientos afiliatorios 
-        registrados para los patrones. Entender estos movimientos es clave para la gestión 
-        administrativa en el IMSS.
-        <br><br>
-        **Explicación de los movimientos (ejemplos basados en datos comunes del IMSS):**
-        *   **ALTA PATRONAL (1):** Este movimiento se registra cuando una persona física o moral 
-            se inscribe por primera vez como patrón ante el IMSS, adquiriendo la obligación de 
-            afiliar a sus trabajadores y pagar las cuotas obrero-patronales.
-        *   **RENOVACIÓN DE TIP (4):** Se refiere a la actualización de la Tarjeta de Identificación 
-            Patronal (TIP), un documento que acredita el registro del patrón ante el IMSS.
-        *   **BAJA PATRONAL (2):** Indica la cancelación del registro patronal, lo que ocurre cuando 
-            la empresa cesa sus actividades o cambia de régimen.
-        *   **MODIFICACIÓN DE RAZÓN SOCIAL (3):** Se utiliza cuando el patrón realiza un cambio en 
-            su denominación o razón social.
-        <br><br>
-        Es importante consultar la normativa oficial del IMSS para una descripción detallada y 
-        completa de cada tipo de movimiento.
-        </div>
-        """, unsafe_allow_html=True
-    )
-
-    st.subheader('Frecuencia de Movimientos por Año')
-    if 'ULTIMO MOVIMIENTO FECHA ULTIMO MOV' in df.columns:
-        df['Año Movimiento'] = df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'].dt.year.astype('Int64') # Use Int64 to handle potential NaNs
-        movimientos_por_año = df['Año Movimiento'].value_counts().sort_index()
-        if not movimientos_por_año.empty:
-            fig6b, ax6b = plt.subplots(figsize=(10, 6))
-            sns.lineplot(x=movimientos_por_año.index, y=movimientos_por_año.values, marker='o', ax=ax6b, color='#8E44AD')
-            ax6b.set_title('Frecuencia de Movimientos por Año')
-            ax6b.set_xlabel('Año')
-            ax6b.set_ylabel('Número de Movimientos')
-            ax6b.grid(True)
-            st.pyplot(fig6b)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader('Tipos de Movimientos Realizados')
+        if check_col('TIPO DE MOVIMIENTO'):
+            movimiento_counts = df['TIPO DE MOVIMIENTO'].value_counts()
+            fig6a, ax6a = plt.subplots(figsize=(6, 6))
+            ax6a.pie(movimiento_counts, labels=movimiento_counts.index, autopct='%1.1f%%', startangle=90, colors=sns.color_palette("cool"))
+            ax6a.axis('equal')
+            st.pyplot(fig6a)
             st.markdown(
                 """
-                <div style='background-color: #E0E7FF; padding: 15px; border-radius: 5px;'>
-                Esta gráfica de línea muestra la tendencia en el número de movimientos afiliatorios 
-                registrados a lo largo de los años. Puede revelar periodos de mayor actividad 
-                administrativa o cambios en la base patronal.
+                <div style='background-color: #F8F9FA; padding: 15px; border-radius: 5px; font-size: 0.9em;'>
+                <b>Tipos de Movimientos (IMSS):</b>
+                <ul>
+                    <li><b>Alta:</b> Inscripción inicial del patrón ante el IMSS adquiriendo obligaciones.</li>
+                    <li><b>Baja:</b> Clausura o terminación definitiva de la relación obrero-patronal.</li>
+                    <li><b>Modificación:</b> Cambio de salario, actividad, representante legal o datos del registro.</li>
+                    <li><b>Reingreso:</b> Reactivación de un registro patronal tras una baja previa.</li>
+                </ul>
+                <small><i>Estos son los movimientos administrativos registrados oficialmente.</i></small>
                 </div>
                 """, unsafe_allow_html=True
             )
         else:
-            st.info("No hay datos de 'ULTIMO MOVIMIENTO FECHA ULTIMO MOV' para analizar la frecuencia por año.")
-    else:
-        st.warning("La columna 'ULTIMO MOVIMIENTO FECHA ULTIMO MOV' no se encuentra en el DataFrame.")
+            st.warning("Columna 'TIPO DE MOVIMIENTO' no encontrada.")
 
-    st.subheader('Medio de Realización de Movimientos')
-    medio_counts = df['MEDIO'].value_counts()
-    fig6c, ax6c = plt.subplots(figsize=(8, 8))
-    ax6c.pie(medio_counts, labels=medio_counts.index, autopct='%1.1f%%', startangle=90, colors=['#3498DB', '#E74C3C'])
-    ax6c.axis('equal')
-    st.pyplot(fig6c)
-    st.markdown(
-        """
-        <div style='background-color: #E0E7FF; padding: 15px; border-radius: 5px;'>
-        Esta gráfica de pastel compara la proporción de movimientos realizados a través de 
-        **INTERNET** frente a los realizados en **VENTANILLA**.
-        <br><br>
-        El Instituto Mexicano del Seguro Social (IMSS) ha estado impulsando activamente la 
-        digitalización de sus trámites para facilitar a los patrones el cumplimiento de 
-        sus obligaciones. La opción de realizar movimientos a través de INTERNET busca 
-        optimizar tiempos, reducir la necesidad de traslados a las subdelegaciones y mejorar 
-        la eficiencia administrativa. Esta tendencia forma parte de una estrategia más 
-        amplia para modernizar los servicios y acercarlos a los usuarios, fomentando una 
-        mayor adopción de las plataformas digitales para todos los trámites disponibles.
-        </div>
-        """, unsafe_allow_html=True
-    )
+    with col2:
+        st.subheader('Medio de Trámite: Internet vs Ventanilla')
+        if check_col('MEDIO'):
+            medio_counts = df['MEDIO'].value_counts()
+            fig6c, ax6c = plt.subplots(figsize=(6, 6))
+            ax6c.pie(medio_counts, labels=medio_counts.index, autopct='%1.1f%%', startangle=90, colors=['#3498DB', '#E74C3C', '#2ECC71'])
+            ax6c.axis('equal')
+            st.pyplot(fig6c)
+            st.markdown(
+                """
+                <div style='background-color: #F8F9FA; padding: 15px; border-radius: 5px; font-size: 0.9em;'>
+                <b>Digitalización de Trámites:</b><br>
+                El <b>IMSS</b> está impulsando intensivamente su plataforma digital y el Buzón IMSS. 
+                El objetivo primordial es que los patrones puedan realizar sus movimientos a través de <b>INTERNET</b> para evitar que tengan que ir físicamente a la subdelegación, eliminando filas, agilizando la actualización y reduciendo los tiempos de respuesta de forma significativa.
+                </div>
+                """, unsafe_allow_html=True
+            )
+        else:
+            st.warning("Columna 'MEDIO' no encontrada.")
+
+    st.markdown("---")
+    st.subheader('Frecuencia de Movimientos por Año')
+    if check_col('ULTIMO MOVIMIENTO FECHA ULTIMO MOV'):
+        df['Año Movimiento'] = df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'].dt.year.astype('Int64')
+        movimientos_por_año = df['Año Movimiento'].value_counts().sort_index()
+        if not movimientos_por_año.empty:
+            fig6b, ax6b = plt.subplots(figsize=(10, 4))
+            sns.lineplot(x=movimientos_por_año.index, y=movimientos_por_año.values, marker='o', ax=ax6b, color='#8E44AD', linewidth=2.5)
+            ax6b.set_title('Tendencia de Movimientos Registrados por Año')
+            ax6b.set_xlabel('Año')
+            ax6b.set_ylabel('Número de Movimientos')
+            ax6b.grid(True, linestyle='--', alpha=0.7)
+            st.pyplot(fig6b)
+        else:
+            st.info("No hay fechas válidas para graficar la tendencia por año.")
+    else:
+        st.warning("La columna 'ULTIMO MOVIMIENTO FECHA ULTIMO MOV' no se encuentra en tu Excel.")
