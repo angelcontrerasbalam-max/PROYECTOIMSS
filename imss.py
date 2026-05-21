@@ -264,13 +264,14 @@ with tab3:
             """
             <div class='dark-card' style='background-color: #1E293B; padding: 20px; border-radius: 8px; border-left: 5px solid #27AE60; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
             <h4 style="margin-top:0; color:#27AE60;">Contexto Económico de Yucatán</h4>
-            Este gráfico de barras muestra las actividades económicas predominantes entre los patrones de la delegación.
-            <ul>
-                <li><b>SERVICIOS:</b> En este grupo se encuentran actividades destinadas a brindar atención y soluciones para satisfacer necesidades de la población, como turismo, restaurantes, consultoría y servicios profesionales.</li>
-                <li><b>CONSTRUCCIÓN:</b> Engloba a empresas dedicadas a la edificación y desarrollo inmobiliario, siendo un motor de empleo temporal.</li>
-                <li><b>MANUFACTURA:</b> Comprende la transformación de materias primas en productos elaborados (ej. industria textil, aeroespacial y maquiladora).</li>
+            <ul style='list-style-type: none; padding-left: 0;'>
+                <li style='margin-bottom: 10px;'>🛎️ <b>SERVICIOS:</b> Es la actividad más representativa. En Mérida, los servicios abarcan turismo, salud, educación, restaurantes y hotelería. Refleja el papel de la ciudad como centro regional de comercio y cultura.</li>
+                <li style='margin-bottom: 10px;'>🏗️ <b>CONSTRUCCIÓN:</b> Segundo lugar en importancia. El auge inmobiliario y proyectos como el Tren Maya y el Puerto de Progreso han impulsado la demanda de constructoras y desarrolladoras.</li>
+                <li style='margin-bottom: 10px;'>🛒 <b>COMERCIO:</b> Incluye comercio mayorista y minorista. Mérida concentra más del 38% de las unidades económicas del estado, con fuerte presencia de supermercados, tiendas locales y cadenas nacionales.</li>
+                <li style='margin-bottom: 10px;'>💼 <b>CONSULTORÍA:</b> Representa servicios profesionales en áreas como contabilidad, auditoría, asesoría legal y tecnológica. Su crecimiento está ligado al aumento de empresas formales que requieren soporte especializado.</li>
+                <li style='margin-bottom: 10px;'>🏭 <b>FABRICACIÓN:</b> Incluye manufactura ligera, textil, agroindustrial y alimentos procesados. Aunque no es el sector dominante, es clave para exportaciones y encadenamientos productivos.</li>
+                <li>🔬 <b>INVESTIGACIÓN:</b> Vinculada a universidades y centros tecnológicos de Mérida, como la UADY y el Parque Científico y Tecnológico de Yucatán. Impulsa innovación en biotecnología, energías renovables y ciencias sociales.</li>
             </ul>
-            En <b>Yucatán</b>, la diversificación económica ha impulsado enormemente el turismo y los servicios. Además, la construcción ha experimentado un auge histórico debido al crecimiento urbano, desarrollos inmobiliarios y proyectos de infraestructura en la región.
             </div>
             """, unsafe_allow_html=True
         )
@@ -415,14 +416,15 @@ with tab6:
             fig6b, ax6b = plt.subplots(figsize=(10, 4))
             sns.lineplot(x=movimientos_por_año.index, y=movimientos_por_año.values, marker='o', ax=ax6b, color='#8E44AD', linewidth=2.5)
             ax6b.set_title('Tendencia de Movimientos Registrados por Año')
-            ax6b.set_xlabel('Año')
-            ax6b.set_ylabel('Número de Movimientos')
-            ax6b.grid(True, linestyle='--', alpha=0.7)
-            st.pyplot(fig6b)
-        else:
             st.info("No hay fechas válidas para graficar la tendencia por año.")
     else:
         st.warning("La columna 'ULTIMO MOVIMIENTO FECHA ULTIMO MOV' no se encuentra en tu Excel.")
 
 # --- Botón Flotante Fijo ---
 st.markdown('<a href="https://www.imss.gob.mx/tramites/alta-patronal" target="_blank" class="floating-btn">💻 Trámite Alta Patronal</a>', unsafe_allow_html=True)
+  ax6b.set_xlabel('Año')
+            ax6b.set_ylabel('Número de Movimientos')
+            ax6b.grid(True, linestyle='--', alpha=0.7)
+            st.pyplot(fig6b)
+        else:
+          
