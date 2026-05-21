@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.subplots as plt
 import matplotlib.pyplot as plt
 import seaborn as sns
 import re
@@ -416,15 +417,14 @@ with tab6:
             fig6b, ax6b = plt.subplots(figsize=(10, 4))
             sns.lineplot(x=movimientos_por_año.index, y=movimientos_por_año.values, marker='o', ax=ax6b, color='#8E44AD', linewidth=2.5)
             ax6b.set_title('Tendencia de Movimientos Registrados por Año')
+            ax6b.set_xlabel('Año')
+            ax6b.set_ylabel('Número de Movimientos')
+            ax6b.grid(True, linestyle='--', alpha=0.7)
+            st.pyplot(fig6b)
+        else:
             st.info("No hay fechas válidas para graficar la tendencia por año.")
     else:
         st.warning("La columna 'ULTIMO MOVIMIENTO FECHA ULTIMO MOV' no se encuentra en tu Excel.")
 
 # --- Botón Flotante Fijo ---
 st.markdown('<a href="https://www.imss.gob.mx/tramites/alta-patronal" target="_blank" class="floating-btn">💻 Trámite Alta Patronal</a>', unsafe_allow_html=True)
-  ax6b.set_xlabel('Año')
-            ax6b.set_ylabel('Número de Movimientos')
-            ax6b.grid(True, linestyle='--', alpha=0.7)
-            st.pyplot(fig6b)
-        else:
-          
