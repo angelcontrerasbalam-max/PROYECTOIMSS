@@ -15,13 +15,16 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* Forzar fondo claro y texto oscuro para evitar problemas con el modo oscuro automático */
+    /* Forzar fondo claro principal */
     .stApp { background-color: #F0F2F6 !important; }
     .main { background-color: #F0F2F6 !important; }
     
-    /* Forzar color oscuro en los textos normales de Streamlit (sin !important para permitir el color de las tarjetas) */
+    /* Forzar color oscuro en los textos normales de Streamlit */
     .stMarkdown p, .stText p, label, li { color: #1E293B; }
     p { color: #1E293B; }
+    
+    /* Color blanco para todos los elementos de las tarjetas oscuras */
+    .dark-card, .dark-card p, .dark-card li, .dark-card ul, .dark-card b, .dark-card h4 { color: #FFFFFF !important; }
     
     h1 { 
         color: #1E3A8A !important; 
@@ -132,12 +135,12 @@ if registro_patronal_input:
                         html_archivero += "</tr>"
 
                         for r in range(1, 8): # 7 Filas
-                            html_archivero += "<tr><td style='padding: 5px; font-weight: bold; color: #555;'>F{r}</td>"
+                            html_archivero += f"<tr><td style='padding: 5px; font-weight: bold; color: #555;'>{r}</td>"
                             for s_char in ['A', 'B', 'C', 'D', 'E', 'F', 'G']:
                                 if c == cabinet and r == fila and s_char == seccion:
                                     bg, color, weight, text = "#4CAF50", "white", "bold", "📂"
                                 else:
-                                    bg, color, weight, text = "#F8F9FA", "#DDD", "normal", "X"
+                                    bg, color, weight, text = "#F8F9FA", "#DDD", "normal", "&nbsp;"
                                 html_archivero += f"<td style='border: 1px solid #ddd; background-color: {bg}; color: {color}; font-weight: {weight}; text-align: center; padding: 5px; width: 35px; height: 35px;'>{text}</td>"
                             html_archivero += "</tr>"
                         html_archivero += "</table></div>"
@@ -179,7 +182,7 @@ with tab1:
             st.markdown("<br><br>", unsafe_allow_html=True)
             st.markdown(
                 """
-                <div style='background-color: #1E293B; color: #F8F9FA; padding: 20px; border-radius: 8px; border-left: 5px solid #4CAF50; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
+                <div class='dark-card' style='background-color: #1E293B; padding: 20px; border-radius: 8px; border-left: 5px solid #4CAF50; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
                 <h4 style="margin-top:0; color:#4CAF50;">Análisis del Estatus</h4>
                 Esta gráfica de pastel muestra la distribución porcentual de los patrones 
                 dados de <b>ALTA</b> y <b>BAJA</b> en la sección. Es un indicador clave para 
@@ -208,7 +211,7 @@ with tab2:
                 st.markdown("<br><br>", unsafe_allow_html=True)
                 st.markdown(
                     """
-                    <div style='background-color: #1E293B; color: #F8F9FA; padding: 20px; border-radius: 8px; border-left: 5px solid #E74C3C; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
+                    <div class='dark-card' style='background-color: #1E293B; padding: 20px; border-radius: 8px; border-left: 5px solid #E74C3C; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
                     <h4 style="margin-top:0; color:#E74C3C;">Motivos Legales de Baja</h4>
                     Esta gráfica ilustra las razones principales por las cuales los registros patronales son dados de baja. 
                     <br><br>
@@ -236,7 +239,7 @@ with tab3:
         st.pyplot(fig3)
         st.markdown(
             """
-            <div style='background-color: #1E293B; color: #F8F9FA; padding: 20px; border-radius: 8px; border-left: 5px solid #27AE60; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
+            <div class='dark-card' style='background-color: #1E293B; padding: 20px; border-radius: 8px; border-left: 5px solid #27AE60; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
             <h4 style="margin-top:0; color:#27AE60;">Contexto Económico de Yucatán</h4>
             Este gráfico de barras muestra las actividades económicas predominantes entre los patrones de la delegación.
             <ul>
@@ -286,7 +289,7 @@ with tab4:
 
         st.markdown(
             """
-            <div style='background-color: #1E293B; color: #F8F9FA; padding: 20px; border-radius: 8px; border-left: 5px solid #F39C12; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
+            <div class='dark-card' style='background-color: #1E293B; padding: 20px; border-radius: 8px; border-left: 5px solid #F39C12; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
             <h4 style="margin-top:0; color:#F39C12;">¿Qué es la Prima de Riesgo de Trabajo del IMSS?</h4>
             Es una cuota obligatoria que los patrones pagan al IMSS para cubrir la probabilidad de ocurrencia de accidentes o enfermedades laborales de sus trabajadores. Esta cuota financia las prestaciones médicas y económicas.
             <br><br>
@@ -320,7 +323,7 @@ with tab5:
 
         st.markdown(
             """
-            <div style='background-color: #1E293B; color: #F8F9FA; padding: 20px; border-radius: 8px; border-left: 5px solid #8E44AD; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
+            <div class='dark-card' style='background-color: #1E293B; padding: 20px; border-radius: 8px; border-left: 5px solid #8E44AD; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
             <h4 style="margin-top:0; color:#8E44AD;">Sectores Intensivos en Mano de Obra</h4>
             Este análisis promedia el número de trabajadores por actividad económica, mostrando qué sectores emplean a más personal por unidad económica de manera directa.
             <br><br>
@@ -345,8 +348,8 @@ with tab6:
             st.pyplot(fig6a)
             st.markdown(
                 """
-                <div style='background-color: #1E293B; color: #F8F9FA; padding: 15px; border-radius: 5px; font-size: 0.9em; border-left: 4px solid #3498DB;'>
-                <b style='color:#3498DB;'>Tipos de Movimientos (IMSS):</b>
+                <div class='dark-card' style='background-color: #1E293B; padding: 15px; border-radius: 5px; font-size: 0.9em; border-left: 4px solid #3498DB;'>
+                <b style='color:#3498DB !important;'>Tipos de Movimientos (IMSS):</b>
                 <ul>
                     <li><b>Alta:</b> Inscripción inicial del patrón ante el IMSS adquiriendo obligaciones.</li>
                     <li><b>Baja:</b> Clausura o terminación definitiva de la relación obrero-patronal.</li>
@@ -370,8 +373,8 @@ with tab6:
             st.pyplot(fig6c)
             st.markdown(
                 """
-                <div style='background-color: #1E293B; color: #F8F9FA; padding: 15px; border-radius: 5px; font-size: 0.9em; border-left: 4px solid #E74C3C;'>
-                <b style='color:#E74C3C;'>Digitalización de Trámites:</b><br>
+                <div class='dark-card' style='background-color: #1E293B; padding: 15px; border-radius: 5px; font-size: 0.9em; border-left: 4px solid #E74C3C;'>
+                <b style='color:#E74C3C !important;'>Digitalización de Trámites:</b><br>
                 El <b>IMSS</b> está impulsando intensivamente su plataforma digital y el Buzón IMSS. 
                 El objetivo primordial es que los patrones puedan realizar sus movimientos a través de <b>INTERNET</b> para evitar que tengan que ir físicamente a la subdelegación, eliminando filas, agilizando la actualización y reduciendo los tiempos de respuesta de forma significativa.
                 </div>
