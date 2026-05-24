@@ -357,9 +357,19 @@ with tab6:
             autotext.set_fontweight('bold')
             autotext.set_color('white')
         ax6a.axis('equal')
+        # ── Mapeo de códigos numéricos a nombres de trámite ──
+        tramite_nombres = {
+            '1': '1 — Alta Patronal',
+            '2': '2 — Cambio de Domicilio',
+            '3': '3 — Cambio de Representante Legal',
+            '4': '4 — Renovación de TIP',
+        }
         # ── Leyenda con nombre completo de cada tipo de trámite ──
         legend_patches = [
-            mpatches.Patch(color=pie_colors[i], label=label)
+            mpatches.Patch(
+                color=pie_colors[i],
+                label=tramite_nombres.get(str(label), str(label))
+            )
             for i, label in enumerate(movimiento_counts.index)
         ]
         ax6a.legend(
@@ -368,8 +378,8 @@ with tab6:
             title_fontsize=11,
             fontsize=10,
             loc='lower center',
-            bbox_to_anchor=(0.5, -0.22),
-            ncol=2,
+            bbox_to_anchor=(0.5, -0.28),
+            ncol=1,
             frameon=True,
             framealpha=0.9
         )
