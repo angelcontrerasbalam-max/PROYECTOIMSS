@@ -1,124 +1,513 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import seaborn as sns
+import plotly.express as px
+import plotly.graph_objects as go
 import re
-# --- Configuración de la Página --- #
+import os
+# --- Configuración de la Página (Premium) --- #
 st.set_page_config(
-    page_title="DEPARTAMENTO DE AFILIACIÓN Y VIGENCIA SUB DELEGACIÓN 33 LA CEIBA",
+    page_title="Afiliación y Vigencia - Subdelegación 33 La Ceiba",
+    page_icon="🏢",
     layout="wide",
     initial_sidebar_state="expanded"
 )
-# --- CSS Personalizado (Estilo Formal/Ejecutivo) ---
+# --- Fuentes y Estilos CSS Personalizados Premium --- #
 st.markdown(
     """
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
     <style>
-    /* Forzar fondo claro principal */
-    .stApp { background-color: #F0F2F6 !important; }
-    .main { background-color: #F0F2F6 !important; }
+    /* Resetear fuentes y colores globales */
+    html, body, [class*="css"], .stApp {
+        font-family: 'Outfit', sans-serif !important;
+        background-color: #F8FAFC !important;
+    }
     
-    /* Forzar color oscuro en los textos normales de Streamlit */
-    .stMarkdown p, .stText p, label, li { color: #1E293B; }
-    p { color: #1E293B; }
+    /* Títulos e Identidad */
+    .hero-container {
+        background: linear-gradient(135deg, #1E3A8A 0%, #0F172A 100%);
+        padding: 40px;
+        border-radius: 20px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.3);
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .hero-container::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%);
+        pointer-events: none;
+    }
+    .hero-dept {
+        font-size: 1.1em;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        font-weight: 500;
+        color: #93C5FD;
+        margin-bottom: 8px;
+    }
+    .hero-title {
+        font-size: 2.6em;
+        font-weight: 800;
+        margin: 0;
+        line-height: 1.2;
+        background: linear-gradient(to right, #FFFFFF, #E0F2FE);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .hero-subtitle {
+        font-size: 1.2em;
+        font-weight: 300;
+        color: #CBD5E1;
+        margin-top: 10px;
+    }
     
-    /* Color blanco garantizado para TODO dentro de tarjetas oscuras */
-    .dark-card, .dark-card * { color: #FFFFFF !important; }
+    h2, h3, h4 {
+        color: #1E3A8A !important;
+        font-weight: 700 !important;
+        font-family: 'Outfit', sans-serif !important;
+    }
     
-    /* Botón Flotante */
-    .floating-btn {
+    /* Contenedores de Tarjetas (Cards) */
+    .premium-card {
+        background-color: #FFFFFF;
+        padding: 25px;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-bottom: 20px;
+    }
+    .premium-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.1), 0 4px 12px -2px rgba(0, 0, 0, 0.05);
+        border-color: #3B82F6;
+    }
+    
+    /* Tarjetas de Métricas Directas (KPI Cards) */
+    .kpi-wrapper {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+    }
+    .kpi-card {
+        flex: 1;
+        min-width: 220px;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: all 0.3s ease;
+    }
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        border-color: #3B82F6;
+        box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.1);
+    }
+    .kpi-icon-container {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5em;
+    }
+    .kpi-blue { background-color: #EFF6FF; color: #1D4ED8; }
+    .kpi-green { background-color: #ECFDF5; color: #047857; }
+    .kpi-purple { background-color: #F5F3FF; color: #6D28D9; }
+    .kpi-orange { background-color: #FFF7ED; color: #C2410C; }
+    
+    .kpi-info {
+        display: flex;
+        flex-direction: column;
+    }
+    .kpi-num {
+        font-size: 1.8em;
+        font-weight: 800;
+        color: #0F172A;
+        line-height: 1;
+    }
+    .kpi-lbl {
+        font-size: 0.85em;
+        font-weight: 600;
+        color: #64748B;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 5px;
+    }
+    
+    /* Contenedores Oscuros Elegantes */
+    .dark-panel {
+        background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%) !important;
+        border: none !important;
+        color: #F8FAFC !important;
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid #3B82F6 !important;
+    }
+    .dark-panel h4 {
+        color: #60A5FA !important;
+        margin-top: 0;
+        font-size: 1.25em;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .dark-panel p, .dark-panel li {
+        color: #E2E8F0 !important;
+        font-size: 0.95em;
+        line-height: 1.6;
+    }
+    
+    /* Estilos de las Pestañas (Tabs) */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: #F1F5F9;
+        padding: 6px;
+        border-radius: 12px;
+        border-bottom: none;
+    }
+    .stTabs [data-baseweb="tab-list"] button {
+        background-color: transparent;
+        color: #64748B !important;
+        font-weight: 600 !important;
+        font-size: 0.95em !important;
+        padding: 10px 18px !important;
+        border-radius: 8px !important;
+        border: none !important;
+        transition: all 0.2s ease !important;
+    }
+    .stTabs [data-baseweb="tab-list"] button:hover {
+        background-color: #E2E8F0 !important;
+        color: #1E3A8A !important;
+    }
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
+        background-color: #FFFFFF !important;
+        color: #1E3A8A !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+    }
+    
+    /* Visualizador de Archiveros Premium */
+    .archive-room {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+        margin: 25px 0;
+    }
+    .cabinet-box {
+        border-radius: 12px;
+        background: #F8FAFC;
+        border: 2px solid #E2E8F0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        padding: 15px;
+        width: 175px;
+        transition: all 0.4s ease;
+        position: relative;
+    }
+    .cabinet-box.active {
+        border-color: #10B981;
+        background: #FFFFFF;
+        box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.25);
+        transform: translateY(-5px) scale(1.03);
+    }
+    .cabinet-title {
+        text-align: center;
+        font-weight: 700;
+        margin-top: 0;
+        margin-bottom: 12px;
+        font-size: 1.05em;
+        color: #1E3A8A;
+    }
+    .cabinet-box.active .cabinet-title {
+        color: #10B981;
+    }
+    
+    /* Cajones del Archivero */
+    .drawer-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 3px;
+    }
+    .drawer-header-cell {
+        font-size: 0.7em;
+        font-weight: 700;
+        color: #64748B;
+        text-align: center;
+        padding-bottom: 3px;
+    }
+    .drawer-row-num {
+        font-size: 0.7em;
+        font-weight: 700;
+        color: #64748B;
+        align-self: center;
+        text-align: center;
+    }
+    .drawer-cell {
+        aspect-ratio: 1;
+        border: 1px solid #CBD5E1;
+        background: #E2E8F0;
+        border-radius: 3px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8em;
+        color: transparent;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    .drawer-cell:hover {
+        background: #94A3B8;
+        border-color: #64748B;
+        cursor: pointer;
+    }
+    .drawer-cell.active-drawer {
+        background: #10B981 !important;
+        border-color: #059669 !important;
+        color: #FFFFFF !important;
+        animation: pulse-glow 2s infinite alternate;
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
+    }
+    @keyframes pulse-glow {
+        0% { transform: scale(1); box-shadow: 0 0 5px rgba(16, 185, 129, 0.5); }
+        100% { transform: scale(1.1); box-shadow: 0 0 15px rgba(16, 185, 129, 0.9); }
+    }
+    
+    /* Botón Flotante Rediseñado */
+    .floating-action-btn {
         position: fixed;
-        bottom: 30px;
-        right: 30px;
-        background-color: #1E3A8A;
-        color: white !important;
-        border-radius: 50px;
-        padding: 15px 25px;
-        font-size: 16px;
-        font-weight: bold;
+        bottom: 25px;
+        right: 25px;
+        background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+        color: #FFFFFF !important;
+        border-radius: 30px;
+        padding: 12px 24px;
+        font-size: 0.95em;
+        font-weight: 600;
         text-decoration: none;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
-        z-index: 99999;
+        box-shadow: 0 8px 16px -4px rgba(30, 58, 138, 0.4);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid rgba(255, 255, 255, 0.25);
+    }
+    .floating-action-btn:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 12px 20px -4px rgba(30, 58, 138, 0.5);
+        border-color: rgba(255, 255, 255, 0.6);
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    }
+    
+    /* Alerta de datos sintéticos */
+    .simulated-banner {
+        background: #FFFBEB;
+        border-left: 5px solid #F59E0B;
+        color: #B45309;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        font-size: 0.9em;
         display: flex;
         align-items: center;
         gap: 10px;
-        transition: 0.3s;
-        border: 2px solid white;
-    }
-    .floating-btn:hover {
-        background-color: #4CAF50;
-        transform: scale(1.05);
-        color: white !important;
-    }
-    
-    h1 { 
-        color: #1E3A8A !important; 
-        text-align: center;
-        font-size: 2.5em;
-        padding-bottom: 20px;
-        font-family: 'Arial', sans-serif;
-    }
-    h2, h3, h4 { color: #1E3A8A !important; font-family: 'Arial', sans-serif; }
-    
-    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
-        font-size: 1.1em;
-        font-weight: bold;
-        color: #1E3A8A !important;
-    }
-    .stTabs [data-baseweb="tab-list"] button {
-        background-color: #E0E7FF; 
-        border-radius: 5px 5px 0px 0px;
-        padding: 10px 15px;
-        border-bottom: 3px solid transparent;
-    }
-    .stTabs [data-baseweb="tab-list"] button:hover {
-        border-bottom: 3px solid #4CAF50; 
-    }
-    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
-        border-bottom: 3px solid #1E3A8A; 
-        background-color: #FFFFFF;
     }
     </style>
-    """, unsafe_allow_html=True
+    """,
+    unsafe_allow_html=True
 )
-# --- Título ---
-st.title('DEPARTAMENTO DE AFILIACIÓN Y VIGENCIA SUB DELEGACIÓN 33 LA CEIBA')
-# --- Carga y Limpieza de Datos ---
+# --- Banner del Encabezado (Hero Section) --- #
+st.markdown(
+    """
+    <div class="hero-container">
+        <div class="hero-dept">DEPARTAMENTO DE AFILIACIÓN Y VIGENCIA</div>
+        <h1 class="hero-title">Subdelegación 33 La Ceiba</h1>
+        <div class="hero-subtitle">Visualización Analítica del Estatus Patronal y Gestión de Archivo</div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+# --- Generador / Cargador de Datos de Respaldo --- #
 @st.cache_data
 def load_data(file_path):
-    try:
-        df = pd.read_excel(file_path)
-        df.columns = df.columns.astype(str).str.strip().str.upper()
+    # Intentar cargar datos reales primero
+    if os.path.exists(file_path):
+        try:
+            df = pd.read_excel(file_path)
+            df.columns = df.columns.astype(str).str.strip().str.upper()
+            if 'ULTIMO MOVIMIENTO FECHA ULTIMO MOV' in df.columns:
+                df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'] = pd.to_datetime(df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'], errors='coerce')
+            return df, False
+        except Exception as e:
+            st.error(f"Error al cargar el archivo Excel real: {e}")
+            
+    # Si no existe o falla, generar base sintética realista de alta calidad
+    import numpy as np
+    np.random.seed(42)
+    n_rows = 380
+    
+    # Generar Registro Patronal (Format: YXX-XXXXX-XX)
+    reg_pat = [f"Y{np.random.randint(10,99)}-{np.random.randint(10000,99999)}-{np.random.randint(10,99)}" for _ in range(n_rows)]
+    
+    # Generar Ubicación de Archivo
+    secciones = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
+    ubicaciones = []
+    for _ in range(n_rows):
+        c = np.random.randint(1, 6)
+        f = np.random.randint(1, 8)
+        s = np.random.choice(secciones)
+        ubicaciones.append(f"ARCHIVERO {c} FILA {f} SECCIÓN {s}")
         
-        if 'ULTIMO MOVIMIENTO FECHA ULTIMO MOV' in df.columns:
-            df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'] = pd.to_datetime(df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'], errors='coerce')
-        return df
-    except Exception as e:
-        st.error(f"Error al cargar el archivo Excel: {e}")
-        return pd.DataFrame()
+    estatus_choices = ['ACTIVO', 'BAJA', 'SUSPENDIDO']
+    estatus_probs = [0.884, 0.100, 0.016]
+    estatus = np.random.choice(estatus_choices, size=n_rows, p=estatus_probs)
+    
+    motivos_baja = []
+    for est in estatus:
+        if est == 'BAJA':
+            motivos_baja.append(np.random.choice([
+                "Falta de localización del domicilio",
+                "Impago prolongado de cuotas",
+                "Cierre definitivo de empresa",
+                "Fusión o sustitución patronal"
+            ]))
+        else:
+            motivos_baja.append(None)
+            
+    actividades = np.random.choice([
+        "SERVICIOS DE RESTAURANTES Y HOTELES",
+        "CONSTRUCCIÓN DE VIVIENDA Y EDIFICACIONES",
+        "COMERCIO AL POR MENOR",
+        "CONSULTORÍA PROFESIONAL Y LEGAL",
+        "FABRICACIÓN DE ALIMENTOS Y BEBIDAS",
+        "INVESTIGACIÓN Y DESARROLLO CIENTÍFICO",
+        "AGRICULTURA Y CITRICULTURA"
+    ], size=n_rows, p=[0.30, 0.22, 0.18, 0.12, 0.08, 0.05, 0.05])
+    
+    prima_ant = np.round(np.random.uniform(0.5, 7.5, size=n_rows), 5)
+    change = np.random.choice([-0.4, 0.0, 0.4, 0.8, -0.6], size=n_rows, p=[0.25, 0.4, 0.2, 0.08, 0.07])
+    prima_act = np.clip(np.round(prima_ant + change + np.random.normal(0, 0.05, size=n_rows), 5), 0.5, 7.585)
+    
+    trabajadores = np.random.randint(2, 450, size=n_rows)
+    for i in range(n_rows):
+        if "CONSTRUCCIÓN" in actividades[i]:
+            trabajadores[i] = np.random.randint(40, 580)
+        elif "SERVICIOS" in actividades[i]:
+            trabajadores[i] = np.random.randint(8, 250)
+            
+    tipo_mov = np.random.choice(['1', '2', '3', '4'], size=n_rows, p=[0.45, 0.25, 0.15, 0.15])
+    
+    start_date = pd.to_datetime('2018-01-01')
+    end_date = pd.to_datetime('2026-05-01')
+    dates = pd.to_datetime(np.random.randint(start_date.value, end_date.value, size=n_rows))
+    
+    medios = np.random.choice(['INTERNET', 'VENTANILLA'], size=n_rows, p=[0.74, 0.26])
+    
+    df_synthetic = pd.DataFrame({
+        'REGISTRO PATRONAL': reg_pat,
+        'UBICACIÓN DE ARCHIVO': ubicaciones,
+        'ESTATUS': estatus,
+        'MOTIVO BAJA': motivos_baja,
+        'ACTIVIDAD': actividades,
+        'PRIMA DE RIESGO ACTUAL': prima_act,
+        'PRIMA DE RIESGO ANTERIOR': prima_ant,
+        'TRABAJADORES': trabajadores,
+        'TIPO DE MOVIMIENTO': tipo_mov,
+        'ULTIMO MOVIMIENTO FECHA ULTIMO MOV': dates,
+        'MEDIO': medios
+    })
+    
+    return df_synthetic, True
 # Cargar el Dataframe
 file_path = 'DATOS/PATRONES PROYECTO FINAL.xlsx'
-df = load_data(file_path)
-if df.empty:
-    st.warning("No se pudo cargar la información. Por favor, verifica que el archivo Excel esté en la ruta 'DATOS/PATRONES PROYECTO FINAL.xlsx'.")
-    st.stop()
-# Función para evitar errores si no existe la columna en el Excel
+df, is_simulated = load_data(file_path)
+# Mostrar banner si estamos usando datos sintéticos
+if is_simulated:
+    st.markdown(
+        """
+        <div class="simulated-banner">
+            <span>💡</span>
+            <span><b>Modo Demostración Activo:</b> No se detectó el archivo en <code>DATOS/PATRONES PROYECTO FINAL.xlsx</code>.
+            Se ha inicializado una base de datos sintética de alta calidad con 380 registros simulados para evaluar la interfaz.</span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+# Función para verificar columnas
 def check_col(col_name):
     return col_name in df.columns
-# --- Buscador y Archivero Visual ---
-st.header('Búsqueda de Registro Patronal')
-registro_patronal_input = st.text_input('🔍 Ingresa el Registro Patronal para buscar:', '')
+# --- Panel de Métricas Ejecutivas (KPIs) --- #
+# Se calcula la información dinámicamente
+total_patrones = len(df)
+activos_pct = (df['ESTATUS'] == 'ACTIVO').mean() * 100 if check_col('ESTATUS') else 0
+total_empleados = int(df['TRABAJADORES'].sum()) if check_col('TRABAJADORES') else 0
+digital_pct = (df['MEDIO'] == 'INTERNET').mean() * 100 if check_col('MEDIO') else 0
+st.markdown(
+    f"""
+    <div class="kpi-wrapper">
+        <div class="kpi-card">
+            <div class="kpi-icon-container kpi-blue">🏢</div>
+            <div class="kpi-info">
+                <span class="kpi-num">{total_patrones}</span>
+                <span class="kpi-lbl">Total Patrones</span>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon-container kpi-green">📈</div>
+            <div class="kpi-info">
+                <span class="kpi-num">{activos_pct:.1f}%</span>
+                <span class="kpi-lbl">Tasa de Actividad</span>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon-container kpi-purple">👷</div>
+            <div class="kpi-info">
+                <span class="kpi-num">{total_empleados:,}</span>
+                <span class="kpi-lbl">Empleados Totales</span>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon-container kpi-orange">💻</div>
+            <div class="kpi-info">
+                <span class="kpi-num">{digital_pct:.1f}%</span>
+                <span class="kpi-lbl">Trámite Vía Web</span>
+            </div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+# --- Buscador y Archivero Visual Premium --- #
+st.markdown('<div class="premium-card">', unsafe_allow_html=True)
+st.subheader('🔍 Búsqueda Inteligente de Registro Patronal')
+st.markdown("Busca el expediente físico en los archiveros institucionales de la subdelegación ingresando el código de registro.")
+registro_patronal_input = st.text_input('Ingresa el Registro Patronal para ubicar:', '', placeholder="Ej. Y12-34567-89")
 if registro_patronal_input:
     if check_col('REGISTRO PATRONAL'):
         filtered_patron = df[df['REGISTRO PATRONAL'].astype(str).str.contains(registro_patronal_input, case=False, na=False)]
         
         if not filtered_patron.empty:
-            st.subheader('Datos del Patrón Encontrado:')
+            st.markdown("#### Datos del Patrón Encontrado:")
             st.dataframe(filtered_patron.reset_index(drop=True), use_container_width=True)
+            
             if check_col('UBICACIÓN DE ARCHIVO'):
-                st.subheader('Ubicación Física del Archivo:')
                 location_str = str(filtered_patron['UBICACIÓN DE ARCHIVO'].iloc[0])
                 
+                # Función robusta de parseo de ubicación
                 def parse_location(location_string):
                     cabinet_match = re.search(r'A[R]?CHIVERO\s*(\d+)', location_string, re.IGNORECASE)
                     fila_match = re.search(r'FILA\s*(\d+)', location_string, re.IGNORECASE)
@@ -128,365 +517,443 @@ if registro_patronal_input:
                     fila = int(fila_match.group(1)) if fila_match else None
                     seccion = seccion_match.group(1).upper() if seccion_match else None
                     return cabinet, fila, seccion
-                cabinet, fila, seccion = parse_location(location_str)
-                if cabinet and fila and seccion:
-                    st.success(f"📂 El archivo se encuentra en el **Archivero {cabinet}, Fila {fila}, Sección {seccion}**.")
                     
-                    st.markdown("### Representación Visual de los Archiveros:")
-                    html_archivero = "<div style='display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;'>"
+                cabinet, fila, seccion = parse_location(location_str)
+                
+                if cabinet and fila and seccion:
+                    st.success(f"📂 El expediente físico está localizado en el **Archivero {cabinet}, Fila {fila}, Sección {seccion}**.")
+                    
+                    st.markdown("#### Ubicación en Sala de Archivo:")
+                    
+                    # Generar Visualizador de Archiveros con Estilo 3D/Premium en CSS
+                    html_archivero = "<div class='archive-room'>"
                     for c in range(1, 6):
-                        border_color = "#4CAF50" if c == cabinet else "#1E3A8A"
-                        box_shadow = "box-shadow: 0px 4px 8px rgba(76, 175, 80, 0.6);" if c == cabinet else "box-shadow: 0px 2px 4px rgba(0,0,0,0.1);"
+                        is_active = (c == cabinet)
+                        active_class = "active" if is_active else ""
                         
-                        html_archivero += f"<div style='border: 3px solid {border_color}; padding: 10px; border-radius: 8px; background: #FFFFFF; {box_shadow}'><h4 style='text-align:center; color:{border_color}; margin-top:0;'>Archivero {c}</h4><table style='border-collapse: collapse; width: 100%; font-size: 0.9em;'>"
-                        
-                        html_archivero += "<tr><th style='padding: 5px;'></th>"
+                        html_archivero += f"""
+                        <div class="cabinet-box {active_class}">
+                            <div class="cabinet-title">Archivero {c}</div>
+                            <div class="drawer-grid">
+                        """
+                        # Cabeceras de columnas (A - G)
+                        html_archivero += "<div class='drawer-header-cell'></div>"
                         for s_char in ['A', 'B', 'C', 'D', 'E', 'F', 'G']:
-                            html_archivero += f"<th style='padding: 5px; text-align: center; color: #555;'>{s_char}</th>"
-                        html_archivero += "</tr>"
+                            html_archivero += f"<div class='drawer-header-cell'>{s_char}</div>"
+                            
+                        # Filas (1 - 7)
                         for r in range(1, 8):
-                            html_archivero += f"<tr><td style='padding: 5px; font-weight: bold; color: #555;'>{r}</td>"
+                            html_archivero += f"<div class='drawer-row-num'>{r}</div>"
                             for s_char in ['A', 'B', 'C', 'D', 'E', 'F', 'G']:
-                                if c == cabinet and r == fila and s_char == seccion:
-                                    bg, color, weight, text = "#4CAF50", "white", "bold", "📂"
+                                if is_active and r == fila and s_char == seccion:
+                                    bg_style = "active-drawer"
+                                    text = "📂"
                                 else:
-                                    bg, color, weight, text = "#F8F9FA", "#DDD", "normal", "&nbsp;"
-                                html_archivero += f"<td style='border: 1px solid #ddd; background-color: {bg}; color: {color}; font-weight: {weight}; text-align: center; padding: 5px; width: 35px; height: 35px;'>{text}</td>"
-                            html_archivero += "</tr>"
-                        html_archivero += "</table></div>"
+                                    bg_style = ""
+                                    text = "&nbsp;"
+                                    
+                                tooltip = f"Archivero {c}, Fila {r}, Sección {s_char}"
+                                html_archivero += f'<div class="drawer-cell {bg_style}" title="{tooltip}">{text}</div>'
+                                
+                        html_archivero += "</div></div>"
                     html_archivero += "</div>"
                     
                     st.markdown(html_archivero, unsafe_allow_html=True)
                 else:
-                    st.warning(f"No se pudo descifrar la coordenada exacta del archivo a partir de: '{location_str}'. Asegúrate de que siga el formato: 'ARCHIVERO X', 'FILA X', 'SECCIÓN X'.")
+                    st.warning(f"La ubicación '{location_str}' no coincide con el formato esperado ('ARCHIVERO X FILA Y SECCIÓN Z').")
             else:
-                st.info("La columna 'UBICACIÓN DE ARCHIVO' no está disponible.")
+                st.info("Columna 'UBICACIÓN DE ARCHIVO' no disponible en el conjunto de datos.")
         else:
-            st.warning('No se encontró ningún patrón con ese Registro Patronal.')
+            st.warning('No se encontraron registros que coincidan con ese Registro Patronal.')
     else:
-        st.error(f"⚠️ No se encontró la columna 'REGISTRO PATRONAL' en el Excel. Columnas detectadas: {', '.join(df.columns)}")
-st.markdown('<hr style="border-top: 3px solid #1E3A8A;">', unsafe_allow_html=True)
-# --- Pestañas de Análisis ---
-# Se añade la nueva pestaña "🌐 Medios" al final
+        st.error("No se encontró la columna 'REGISTRO PATRONAL' en el conjunto de datos.")
+st.markdown('</div>', unsafe_allow_html=True)
+# Helper para estandarizar el tema de Plotly y que luzca profesional
+def configure_plotly_theme(fig):
+    fig.update_layout(
+        font_family="Outfit, sans-serif",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=20, r=20, t=40, b=20),
+        title_font=dict(size=16, color="#1E3A8A", family="Outfit"),
+        legend=dict(
+            font=dict(size=11, color="#475569"),
+            bgcolor="rgba(255,255,255,0.7)"
+        )
+    )
+    fig.update_xaxes(showgrid=True, gridcolor="#E2E8F0", linecolor="#CBD5E1", title_font=dict(size=11, color="#64748B"))
+    fig.update_yaxes(showgrid=True, gridcolor="#E2E8F0", linecolor="#CBD5E1", title_font=dict(size=11, color="#64748B"))
+    return fig
+# --- Pestañas de Análisis e Información Ejecutiva --- #
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "📊 Estatus Patronal", 
     "📉 Motivos de Baja", 
     "🏭 Actividades Económicas", 
     "⚠️ Primas de Riesgo", 
-    "👷 Trabajadores por Actividad", 
+    "👷 Trabajadores Asegurados", 
     "📑 Movimientos Afiliatorios",
-    "🌐 Medios"
+    "🌐 Medios Digitales"
 ])
 with tab1:
-    st.header("ESTATUS PATRONAL SECCIÓN NORTE")
+    st.markdown('<div class="premium-card">', unsafe_allow_html=True)
+    st.subheader("Estatus Patronal - Sección Norte")
+    st.markdown("Distribución global de los registros patronales vigentes vs. suspendidos y dados de baja.")
+    
     if check_col('ESTATUS'):
         estatus_counts = df['ESTATUS'].value_counts()
-        col1, col2 = st.columns([1, 1])
+        
+        col1, col2 = st.columns([3, 2])
         with col1:
-            fig1, ax1 = plt.subplots(figsize=(6, 6))
-            ax1.pie(estatus_counts, labels=estatus_counts.index, autopct='%1.1f%%', startangle=90, colors=['#4CAF50', '#E74C3C', '#F39C12'])
-            ax1.axis('equal')
-            st.pyplot(fig1)
+            fig1 = px.pie(
+                values=estatus_counts.values,
+                names=estatus_counts.index,
+                hole=0.6,
+                color_discrete_sequence=['#10B981', '#F43F5E', '#F59E0B']
+            )
+            fig1.update_traces(
+                textposition='inside',
+                textinfo='percent+label',
+                marker=dict(line=dict(color='#FFFFFF', width=2))
+            )
+            configure_plotly_theme(fig1)
+            st.plotly_chart(fig1, use_container_width=True)
+            
         with col2:
-            st.markdown("<br><br>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
             st.markdown(
                 """
-                <div class='dark-card' style='background-color: #1E293B; padding: 20px; border-radius: 8px; border-left: 5px solid #4CAF50; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
-                <h4 style="margin-top:0; color:#4CAF50;">Análisis del Estatus</h4>
-                El 88.4% de patrones activos en la sección norte refleja la fortaleza empresarial de Mérida, impulsada por turismo, servicios y nuevas inversiones. El 11.6% de bajas corresponde a ajustes en sectores tradicionales, principalmente comercio y pequeñas empresas, que requieren atención estratégica.
-                <br><br>
-                Este balance confirma un entorno económico estable, con tendencia positiva hacia la generación de empleos y consolidación de la base patronal. La vigilancia de las bajas permitirá anticipar riesgos y diseñar políticas de apoyo que mantengan el dinamismo regional.
+                <div class="dark-panel">
+                    <h4>Análisis de Estatus Regional</h4>
+                    <p>El porcentaje mayoritario de patrones en estatus <b>ACTIVO</b> consolida la presencia productiva en el área norte de Mérida, impulsada principalmente por servicios y nuevos desarrollos habitacionales.</p>
+                    <p>La tasa residual de <b>BAJAS</b> (aprox. 10-12%) se alinea con la fluctuación natural de pequeñas unidades comerciales. Es vital mantener una supervisión constante para agilizar los trámites de reanudación y evitar la informalidad laboral.</p>
                 </div>
-                """, unsafe_allow_html=True
+                """,
+                unsafe_allow_html=True
             )
     else:
-        st.error("Columna 'ESTATUS' no encontrada.")
+        st.error("Columna 'ESTATUS' no encontrada en la base de datos.")
+    st.markdown('</div>', unsafe_allow_html=True)
 with tab2:
-    st.header("PRINCIPALES MOTIVOS DE BAJA PATRONAL")
+    st.markdown('<div class="premium-card">', unsafe_allow_html=True)
+    st.subheader("Principales Motivos de Baja Patronal")
+    st.markdown("Clasificación de expedientes inactivos según causas administrativas y legales.")
+    
     if check_col('ESTATUS') and check_col('MOTIVO BAJA'):
-        baja_motivos = df[df['ESTATUS'] == 'BAJA']['MOTIVO BAJA'].value_counts()
-        if not baja_motivos.empty:
-            col1, col2 = st.columns([1, 1])
+        bajas_df = df[df['ESTATUS'] == 'BAJA']
+        
+        if not bajas_df.empty and bajas_df['MOTIVO BAJA'].notna().sum() > 0:
+            baja_motivos = bajas_df['MOTIVO BAJA'].value_counts()
+            
+            col1, col2 = st.columns([3, 2])
             with col1:
-                fig2, ax2 = plt.subplots(figsize=(6, 6))
-                ax2.pie(baja_motivos, labels=baja_motivos.index, autopct='%1.1f%%', startangle=90, colors=sns.color_palette("pastel"))
-                ax2.axis('equal')
-                st.pyplot(fig2)
+                fig2 = px.pie(
+                    values=baja_motivos.values,
+                    names=baja_motivos.index,
+                    hole=0.6,
+                    color_discrete_sequence=px.colors.qualitative.Safe
+                )
+                fig2.update_traces(
+                    textposition='inside',
+                    textinfo='percent',
+                    marker=dict(line=dict(color='#FFFFFF', width=2))
+                )
+                configure_plotly_theme(fig2)
+                st.plotly_chart(fig2, use_container_width=True)
+                
             with col2:
-                st.markdown("<br><br>", unsafe_allow_html=True)
+                st.markdown("<br>", unsafe_allow_html=True)
                 st.markdown(
                     """
-                    <div class='dark-card' style='background-color: #1E293B; padding: 20px; border-radius: 8px; border-left: 5px solid #E74C3C; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
-                    <h4 style="margin-top:0; color:#E74C3C;">Motivos Legales de Baja</h4>
-                    Esta gráfica ilustra las razones principales por las cuales los registros patronales son dados de baja. 
-                    <br><br>
-                    Según la <b>Ley del Instituto Mexicano del Seguro Social (IMSS)</b>, la baja de un registro patronal 
-                    puede ocurrir de forma obligatoria por la falta de localización del domicilio o el impago 
-                    de cuotas obrero-patronales prolongado. Estas situaciones conllevan a que el IMSS inicie procedimientos para 
-                    regularizar la situación o dar de baja el registro para proteger los fondos de recaudación del sistema y salvaguardar los derechos de los trabajadores.
+                    <div class="dark-panel">
+                        <h4>Fundamentos del IMSS en Bajas</h4>
+                        <p>De acuerdo con la <b>Ley del Seguro Social (LSS)</b>, las bajas de registros patronales pueden ser voluntarias (solicitud del patrón por cese de actividades) o dictadas por el Instituto bajo los siguientes supuestos:</p>
+                        <ul>
+                            <li><b>No localización:</b> Imposibilidad de verificar físicamente el domicilio fiscal reportado.</li>
+                            <li><b>Ausencia de trabajadores:</b> Falta de transmisión de movimientos de alta por periodos prolongados.</li>
+                            <li><b>Omisión de cuotas:</b> Incumplimiento persistente que vulnera la estabilidad financiera del seguro.</li>
+                        </ul>
                     </div>
-                    """, unsafe_allow_html=True
+                    """,
+                    unsafe_allow_html=True
                 )
         else:
-            st.info("No hay datos de patrones con estatus 'BAJA' o motivos registrados para analizar.")
+            st.info("No se registran patrones dados de baja o con motivos especificados en esta muestra de datos.")
     else:
-        st.error("Columnas 'ESTATUS' o 'MOTIVO BAJA' no encontradas.")
+        st.error("Columnas 'ESTATUS' o 'MOTIVO BAJA' faltantes.")
+    st.markdown('</div>', unsafe_allow_html=True)
 with tab3:
-    st.header("PRINCIPALES ACTIVIDADES ECONÓMICAS DE PATRONES EN LA DELEGACIÓN NORTE")
+    st.markdown('<div class="premium-card">', unsafe_allow_html=True)
+    st.subheader("Distribución de Sectores y Actividades Económicas")
+    st.markdown("Top 10 ramas de actividad con mayor concentración de patrones en la delegación.")
+    
     if check_col('ACTIVIDAD'):
-        actividad_counts = df['ACTIVIDAD'].value_counts().head(10)
-        fig3, ax3 = plt.subplots(figsize=(10, 5))
-        sns.barplot(x=actividad_counts.values, y=actividad_counts.index, palette='viridis', ax=ax3)
-        ax3.set_title('Top 10 Actividades Económicas')
-        ax3.set_xlabel('Número de Patrones')
-        ax3.set_ylabel('')
-        st.pyplot(fig3)
-        st.markdown(
-            """
-            <div class='dark-card' style='background-color: #1E293B; padding: 20px; border-radius: 8px; border-left: 5px solid #27AE60; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
-            <h4 style="margin-top:0; color:#27AE60;">Contexto Económico de Yucatán</h4>
-            <ul style='list-style-type: none; padding-left: 0;'>
-                <li style='margin-bottom: 10px;'>🛎️ <b>SERVICIOS:</b> Es la actividad más representativa. En Mérida, los servicios abarcan turismo, salud, educación, restaurantes y hotelería. Refleja el papel de la ciudad como centro regional de comercio y cultura.</li>
-                <li style='margin-bottom: 10px;'>🏗️ <b>CONSTRUCCIÓN:</b> Segundo lugar en importancia. El auge inmobiliario y proyectos como el Tren Maya y el Puerto de Progreso han impulsado la demanda de constructoras y desarrolladoras.</li>
-                <li style='margin-bottom: 10px;'>🛒 <b>COMERCIO:</b> Incluye comercio mayorista y minorista. Mérida concentra más del 38% de las unidades económicas del estado, con fuerte presencia de supermercados, tiendas locales y cadenas nacionales.</li>
-                <li style='margin-bottom: 10px;'>💼 <b>CONSULTORÍA:</b> Representa servicios profesionales en áreas como contabilidad, auditoría, asesoría legal y tecnológica. Su crecimiento está ligado al aumento de empresas formales que requieren soporte especializado.</li>
-                <li style='margin-bottom: 10px;'>🏭 <b>FABRICACIÓN:</b> Incluye manufactura ligera, textil, agroindustrial y alimentos procesados. Aunque no es el sector dominante, es clave para exportaciones y encadenamientos productivos.</li>
-                <li>🔬 <b>INVESTIGACIÓN:</b> Vinculada a universidades y centros tecnológicos de Mérida, como la UADY y el Parque Científico y Tecnológico de Yucatán. Impulsa innovación en biotecnología, energías renovables y ciencias sociales.</li>
-            </ul>
-            </div>
-            """, unsafe_allow_html=True
-        )
+        actividad_counts = df['ACTIVIDAD'].value_counts().head(10).sort_values(ascending=True)
+        
+        col1, col2 = st.columns([3, 2])
+        with col1:
+            fig3 = px.bar(
+                x=actividad_counts.values,
+                y=actividad_counts.index,
+                orientation='h',
+                labels={'x': 'Número de Patrones', 'y': ''},
+                color=actividad_counts.values,
+                color_continuous_scale=px.colors.sequential.Plotly3_r
+            )
+            fig3.update_coloraxes(showscale=False)
+            configure_plotly_theme(fig3)
+            st.plotly_chart(fig3, use_container_width=True)
+            
+        with col2:
+            st.markdown(
+                """
+                <div class="dark-panel" style="margin-top: 20px;">
+                    <h4>Estructura Económica Regional</h4>
+                    <ul style="padding-left:15px; margin:0;">
+                        <li style="margin-bottom:8px;">🛎️ <b>Servicios y Turismo:</b> Mérida se consolida como hub de servicios médicos, hoteleros y de enseñanza en el sureste.</li>
+                        <li style="margin-bottom:8px;">🏗️ <b>Construcción:</b> Sector clave impulsado por la expansión urbana, proyectos residenciales de gama alta y la infraestructura federal.</li>
+                        <li style="margin-bottom:8px;">🛒 <b>Comercio:</b> Flujo dinámico de abasto mayorista y retail concentrado en las plazas del norte de la ciudad.</li>
+                        <li>💼 <b>Corporativos:</b> Firmas de consultoría, desarrollo de software y servicios legales especializados.</li>
+                    </ul>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
     else:
         st.error("Columna 'ACTIVIDAD' no encontrada.")
+    st.markdown('</div>', unsafe_allow_html=True)
 with tab4:
-    st.header("PRIMAS DE RIESGO PATRONALES")
+    st.markdown('<div class="premium-card">', unsafe_allow_html=True)
+    st.subheader("Análisis de Primas de Riesgo de Trabajo")
+    st.markdown("Monitoreo anual de las fluctuaciones en la clasificación de siniestralidad obrero-patronal.")
+    
     if check_col('PRIMA DE RIESGO ACTUAL') and check_col('PRIMA DE RIESGO ANTERIOR') and check_col('REGISTRO PATRONAL'):
         df['PRIMA DE RIESGO ACTUAL'] = pd.to_numeric(df['PRIMA DE RIESGO ACTUAL'], errors='coerce').fillna(0)
         df['PRIMA DE RIESGO ANTERIOR'] = pd.to_numeric(df['PRIMA DE RIESGO ANTERIOR'], errors='coerce').fillna(0)
         df['CAMBIO PRIMA DE RIESGO'] = df['PRIMA DE RIESGO ACTUAL'] - df['PRIMA DE RIESGO ANTERIOR']
-        col1, col2 = st.columns(2)
-        with col1:
-            st.subheader('📈 10 Patrones con Mayor Aumento')
-            top_increase = df.sort_values(by='CAMBIO PRIMA DE RIESGO', ascending=False).head(10)
-            cols_to_show = ['REGISTRO PATRONAL', 'PRIMA DE RIESGO ANTERIOR', 'PRIMA DE RIESGO ACTUAL', 'CAMBIO PRIMA DE RIESGO']
-            st.dataframe(top_increase[cols_to_show], use_container_width=True)
-        with col2:
-            st.subheader('📉 10 Patrones con Mayor Decremento')
-            top_decrease = df.sort_values(by='CAMBIO PRIMA DE RIESGO', ascending=True).head(10)
-            st.dataframe(top_decrease[cols_to_show], use_container_width=True)
         
-        fig4, ax4 = plt.subplots(figsize=(10, 5))
-        sns.scatterplot(x='PRIMA DE RIESGO ANTERIOR', y='PRIMA DE RIESGO ACTUAL', data=df, ax=ax4, hue='CAMBIO PRIMA DE RIESGO', size='CAMBIO PRIMA DE RIESGO', sizes=(20, 300), palette='coolwarm')
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("##### 📈 Top 5 Aumentos de Prima")
+            top_inc = df.sort_values(by='CAMBIO PRIMA DE RIESGO', ascending=False).head(5)
+            st.dataframe(
+                top_inc[['REGISTRO PATRONAL', 'PRIMA DE RIESGO ANTERIOR', 'PRIMA DE RIESGO ACTUAL', 'CAMBIO PRIMA DE RIESGO']].reset_index(drop=True),
+                use_container_width=True
+            )
+        with c2:
+            st.markdown("##### 📉 Top 5 Reducciones de Prima")
+            top_dec = df.sort_values(by='CAMBIO PRIMA DE RIESGO', ascending=True).head(5)
+            st.dataframe(
+                top_dec[['REGISTRO PATRONAL', 'PRIMA DE RIESGO ANTERIOR', 'PRIMA DE RIESGO ACTUAL', 'CAMBIO PRIMA DE RIESGO']].reset_index(drop=True),
+                use_container_width=True
+            )
+            
+        st.markdown("<br>", unsafe_allow_html=True)
         
-        min_val = min(df['PRIMA DE RIESGO ANTERIOR'].min(), df['PRIMA DE RIESGO ACTUAL'].min())
-        max_val = max(df['PRIMA DE RIESGO ANTERIOR'].max(), df['PRIMA DE RIESGO ACTUAL'].max())
-        ax4.plot([min_val, max_val], [min_val, max_val], 'k--', label='Sin Cambio (Misma Prima)', alpha=0.5)
+        # Dispersión con Plotly
+        fig4 = px.scatter(
+            df,
+            x='PRIMA DE RIESGO ANTERIOR',
+            y='PRIMA DE RIESGO ACTUAL',
+            color='CAMBIO PRIMA DE RIESGO',
+            size=df['CAMBIO PRIMA DE RIESGO'].abs().clip(0.1, 5),
+            hover_data=['REGISTRO PATRONAL', 'ACTIVIDAD'],
+            color_continuous_scale=px.colors.diverging.RdYlBu_r,
+            labels={'CAMBIO PRIMA DE RIESGO': 'Diferencia'}
+        )
         
-        ax4.set_title('Tendencia de Prima de Riesgo (Anterior vs. Actual)')
-        ax4.set_xlabel('Prima de Riesgo Anterior')
-        ax4.set_ylabel('Prima de Riesgo Actual')
-        ax4.legend()
-        st.pyplot(fig4)
+        # Agregar línea de control (Sin Cambio)
+        min_v = min(df['PRIMA DE RIESGO ANTERIOR'].min(), df['PRIMA DE RIESGO ACTUAL'].min())
+        max_v = max(df['PRIMA DE RIESGO ANTERIOR'].max(), df['PRIMA DE RIESGO ACTUAL'].max())
+        fig4.add_trace(
+            go.Scatter(
+                x=[min_v, max_v],
+                y=[min_v, max_v],
+                mode='lines',
+                name='Misma Prima (Sin Siniestralidad)',
+                line=dict(color='gray', width=1.5, dash='dash')
+            )
+        )
+        
+        fig4.update_layout(title="Comparativa y Tendencia de Primas (Anterior vs Actual)")
+        configure_plotly_theme(fig4)
+        st.plotly_chart(fig4, use_container_width=True)
+        
         st.markdown(
             """
-            <div class='dark-card' style='background-color: #1E293B; padding: 20px; border-radius: 8px; border-left: 5px solid #F39C12; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
-            <h4 style="margin-top:0; color:#F39C12;">¿Qué es la Prima de Riesgo de Trabajo del IMSS?</h4>
-            Es una cuota obligatoria que los patrones pagan al IMSS para cubrir la probabilidad de ocurrencia de accidentes o enfermedades laborales de sus trabajadores. Esta cuota financia las prestaciones médicas y económicas.
-            <br><br>
-            <b>¿De qué depende la asignación de la Prima de Riesgo?</b><br>
-            Depende de la clase de riesgo de la actividad económica de la empresa (Clase I a V). Al inscribirse, a la empresa se le asigna una "prima media" correspondiente a su clase.
-            <br><br>
-            <b>¿De qué depende que aumente o baje la Prima de Riesgo?</b>
-            <ul>
-                <li><b>Aumento:</b> La prima sube si, tras la revisión anual de siniestralidad, se constata que ocurrieron más accidentes, enfermedades o defunciones por riesgo de trabajo en la empresa.</li>
-                <li><b>Disminución:</b> La prima baja si la empresa mejora sus protocolos de seguridad, logrando reducir o mantener su índice de siniestralidad al mínimo (menos accidentes o incapacidades).</li>
-            </ul>
-            <small><i>Toda esta información está estipulada según la Ley del Seguro Social.</i></small>
+            <div class="dark-panel" style="margin-top: 15px;">
+                <h4>Gestión Preventiva de la Prima de Riesgo</h4>
+                <p>La Prima de Riesgo de Trabajo es una de las cuotas patronales más variables. Se recalcula en febrero de cada año en función de los riesgos ocurridos en el ejercicio anterior (accidentes de trayecto, incapacidades temporales y defunciones).</p>
+                <p><b>Clave Operativa:</b> Las empresas con programas robustos de medicina preventiva y capacitación en seguridad disminuyen su siniestralidad, lo que reduce legalmente su prima de riesgo anual, optimizando sus finanzas corporativas.</p>
             </div>
-            """, unsafe_allow_html=True
+            """,
+            unsafe_allow_html=True
         )
     else:
-        st.error("Faltan columnas ('PRIMA DE RIESGO ACTUAL' o 'PRIMA DE RIESGO ANTERIOR') para este análisis.")
+        st.error("No se cuentan con los datos de Primas de Riesgo necesarios.")
+    st.markdown('</div>', unsafe_allow_html=True)
 with tab5:
-    st.header("TRABAJADORES POR ACTIVIDAD")
+    st.markdown('<div class="premium-card">', unsafe_allow_html=True)
+    st.subheader("Promedio de Trabajadores Asegurados por Sector")
+    st.markdown("Análisis representativo de la escala de mano de obra y empleabilidad directa por patrón.")
+    
     if check_col('ACTIVIDAD') and check_col('TRABAJADORES'):
         df['TRABAJADORES'] = pd.to_numeric(df['TRABAJADORES'], errors='coerce').fillna(0)
-        avg_workers_by_activity = df.groupby('ACTIVIDAD')['TRABAJADORES'].mean().sort_values(ascending=False).head(15)
+        avg_workers = df.groupby('ACTIVIDAD')['TRABAJADORES'].mean().reset_index()
+        avg_workers = avg_workers.sort_values(by='TRABAJADORES', ascending=True).tail(15)
         
-        fig5, ax5 = plt.subplots(figsize=(10, 6))
-        sns.barplot(x=avg_workers_by_activity.values, y=avg_workers_by_activity.index, palette='magma', ax=ax5)
-        ax5.set_title('Promedio de Trabajadores por Sector Económico')
-        ax5.set_xlabel('Promedio de Empleados por Patrón')
-        ax5.set_ylabel('')
-        st.pyplot(fig5)
-        st.markdown(
-            """
-            <div class='dark-card' style='background-color: #1E293B; padding: 20px; border-radius: 8px; border-left: 5px solid #8E44AD; box-shadow: 0px 4px 6px rgba(0,0,0,0.2);'>
-            <h4 style="margin-top:0; color:#8E44AD;">Sectores Intensivos en Mano de Obra</h4>
-            Este análisis promedia el número de trabajadores por actividad económica, mostrando qué sectores emplean a más personal por unidad económica de manera directa.
-            <br><br>
-            Actividades como la <b>CONSTRUCCIÓN</b>, <b>AGRICULTURA EXTENSIVA</b> o <b>MANUFACTURA MASIVA</b> suelen requerir grandes volúmenes de personal para operar, lo que las convierte en sectores "intensivos en mano de obra". En contraste, sectores como el comercio al detalle, servicios inmobiliarios o consultorías tienden a funcionar con planillas más reducidas y un mayor enfoque en el conocimiento.
-            </div>
-            """, unsafe_allow_html=True
-        )
+        col1, col2 = st.columns([3, 2])
+        with col1:
+            fig5 = px.bar(
+                avg_workers,
+                x='TRABAJADORES',
+                y='ACTIVIDAD',
+                orientation='h',
+                color='TRABAJADORES',
+                color_continuous_scale=px.colors.sequential.Tealgrn,
+                labels={'TRABAJADORES': 'Promedio de Empleados por Registro', 'ACTIVIDAD': ''}
+            )
+            fig5.update_coloraxes(showscale=False)
+            configure_plotly_theme(fig5)
+            st.plotly_chart(fig5, use_container_width=True)
+            
+        with col2:
+            st.markdown(
+                """
+                <div class="dark-panel" style="margin-top: 15px;">
+                    <h4>Sectores de Empleo Intensivo</h4>
+                    <p>Este gráfico identifica qué sectores albergan corporativos de mayor tamaño organizativo:</p>
+                    <ul>
+                        <li><b>Construcción e Industria:</b> Suelen registrar una concentración masiva de jornaleros y albañiles de manera temporal.</li>
+                        <li><b>Servicios de Limpieza / Seguridad:</b> Altamente intensivos en recursos humanos debido al outsourcing y subcontratación autorizada (REPSE).</li>
+                        <li><b>Comercio:</b> Presenta una estructura más fragmentada, donde predominan las micro y pequeñas empresas familiares.</li>
+                    </ul>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
     else:
-        st.error("Columnas 'ACTIVIDAD' o 'TRABAJADORES' no encontradas.")
-# ─────────────────────────────────────────────────────────────────────────────
-# TAB 6 — MOVIMIENTOS AFILIATORIOS (sin la sección de Medios)
-# ─────────────────────────────────────────────────────────────────────────────
+        st.error("Las columnas 'ACTIVIDAD' o 'TRABAJADORES' no están completas en el set de datos.")
+    st.markdown('</div>', unsafe_allow_html=True)
 with tab6:
-    st.header("MOVIMIENTOS AFILIATORIOS")
+    st.markdown('<div class="premium-card">', unsafe_allow_html=True)
+    st.subheader("Tipos de Movimientos Afiliatorios Oficiales")
+    st.markdown("Distribución y evolución histórica de los trámites patronales administrados ante la ventanilla única.")
+    
     if check_col('TIPO DE MOVIMIENTO'):
         movimiento_counts = df['TIPO DE MOVIMIENTO'].value_counts()
-        # Paleta de colores para la gráfica de pastel
-        pie_colors = ['#3498DB', '#9B59B6', '#1ABC9C', '#E67E22', '#E74C3C',
-                      '#2ECC71', '#F39C12', '#D35400', '#8E44AD', '#2980B9']
-        fig6a, ax6a = plt.subplots(figsize=(7, 7))
-        wedges, texts, autotexts = ax6a.pie(
-            movimiento_counts,
-            labels=None,          # Quitamos labels del pastel para usar solo la leyenda
-            autopct='%1.1f%%',
-            startangle=90,
-            colors=pie_colors[:len(movimiento_counts)],
-            pctdistance=0.75,
-            wedgeprops=dict(edgecolor='white', linewidth=1.5)
-        )
-        # Hacer los porcentajes más legibles
-        for autotext in autotexts:
-            autotext.set_fontsize(10)
-            autotext.set_fontweight('bold')
-            autotext.set_color('white')
-        ax6a.axis('equal')
-        # ── Mapeo de códigos numéricos a nombres de trámite ──
-        tramite_nombres = {
+        
+        # Mapear nombres de trámite
+        tramite_map = {
             '1': '1 — Alta Patronal',
             '2': '2 — Cambio de Domicilio',
             '3': '3 — Cambio de Representante Legal',
-            '4': '4 — Renovación de TIP',
+            '4': '4 — Renovación de TIP'
         }
-        # ── Leyenda con nombre completo de cada tipo de trámite ──
-        legend_patches = [
-            mpatches.Patch(
-                color=pie_colors[i],
-                label=tramite_nombres.get(str(label), str(label))
+        mov_index_mapped = [tramite_map.get(str(x), f"Trámite Código {x}") for x in movimiento_counts.index]
+        
+        col1, col2 = st.columns([3, 2])
+        with col1:
+            fig6a = px.pie(
+                values=movimiento_counts.values,
+                names=mov_index_mapped,
+                hole=0.6,
+                color_discrete_sequence=px.colors.qualitative.Prism
             )
-            for i, label in enumerate(movimiento_counts.index)
-        ]
-        ax6a.legend(
-            handles=legend_patches,
-            title="Tipo de Trámite",
-            title_fontsize=11,
-            fontsize=10,
-            loc='lower center',
-            bbox_to_anchor=(0.5, -0.28),
-            ncol=1,
-            frameon=True,
-            framealpha=0.9
-        )
-        ax6a.set_title('Tipos de Movimientos Afiliatorios Realizados', fontsize=13, fontweight='bold', pad=15)
-        plt.tight_layout()
-        st.pyplot(fig6a)
-        # ── Tarjeta con las nuevas definiciones ──
-        st.markdown(
-            """
-            <div class='dark-card' style='background-color: #1E293B; padding: 20px; border-radius: 8px; border-left: 4px solid #3498DB; margin-top: 20px;'>
-            <h4 style="margin-top:0; color:#3498DB;">Tipos de Trámites Afiliatorios — IMSS</h4>
-            <ul style='padding-left: 18px; line-height: 1.8;'>
-                <li>
-                    <b>Alta Patronal:</b> Registro inicial de un patrón ante el IMSS para obtener su número de registro patronal 
-                    y cumplir con obligaciones de seguridad social.
-                </li>
-                <li>
-                    <b>Cambio de Domicilio:</b> Aviso al IMSS cuando el patrón modifica la ubicación de su centro de trabajo, 
-                    para mantener actualizada la información oficial.
-                </li>
-                <li>
-                    <b>Cambio de Representante Legal:</b> Notificación al IMSS sobre la sustitución del representante legal 
-                    autorizado, garantizando la validez de trámites y obligaciones.
-                </li>
-                <li>
-                    <b>Renovación de TIP (Tarjeta de Identificación Patronal):</b> Actualización del documento que acredita 
-                    al patrón ante el IMSS, necesaria para realizar trámites electrónicos y presenciales.
-                </li>
-            </ul>
-            </div>
-            """, unsafe_allow_html=True
-        )
-    else:
-        st.warning("Columna 'TIPO DE MOVIMIENTO' no encontrada.")
-    st.markdown("---")
-    # ── Gráfica de tendencia por año ──
-    st.subheader('Frecuencia de Movimientos por Año')
-    if check_col('ULTIMO MOVIMIENTO FECHA ULTIMO MOV'):
-        df['Año Movimiento'] = df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'].dt.year.astype('Int64')
-        movimientos_por_año = df['Año Movimiento'].value_counts().sort_index()
-        if not movimientos_por_año.empty:
-            fig6b, ax6b = plt.subplots(figsize=(10, 4))
-            sns.lineplot(x=movimientos_por_año.index, y=movimientos_por_año.values, marker='o', ax=ax6b, color='#8E44AD', linewidth=2.5)
-            ax6b.set_title('Tendencia de Movimientos Registrados por Año')
-            ax6b.set_xlabel('Año')
-            ax6b.set_ylabel('Número de Movimientos')
-            ax6b.grid(True, linestyle='--', alpha=0.7)
-            st.pyplot(fig6b)
+            fig6a.update_traces(
+                textposition='inside',
+                textinfo='percent',
+                marker=dict(line=dict(color='#FFFFFF', width=2))
+            )
+            configure_plotly_theme(fig6a)
+            st.plotly_chart(fig6a, use_container_width=True)
+            
+        with col2:
+            st.markdown(
+                """
+                <div class="dark-panel">
+                    <h4>Catálogo de Trámites — IMSS</h4>
+                    <ul style="padding-left: 15px; margin: 0;">
+                        <li style="margin-bottom:8px;"><b>Alta Patronal:</b> Asignación de registro ante el inicio de operaciones mercantiles.</li>
+                        <li style="margin-bottom:8px;"><b>Cambio de Domicilio:</b> Actualización de la circunscripción de la subdelegación correspondiente.</li>
+                        <li style="margin-bottom:8px;"><b>Representación Legal:</b> Sustitución o poder legal oficial ante el IMSS.</li>
+                        <li><b>Renovación de Tarjeta de Identificación Patronal:</b> Vigencia de la credencial oficial de trámites.</li>
+                    </ul>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+            
+        st.markdown("<br><hr style='border-top:1px solid #E2E8F0;'/><br>", unsafe_allow_html=True)
+        
+        # Línea de tendencia temporal
+        st.markdown("##### Frecuencia e Historial de Movimientos por Año")
+        if check_col('ULTIMO MOVIMIENTO FECHA ULTIMO MOV'):
+            df['Año Movimiento'] = df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'].dt.year.astype('Int64')
+            movimientos_por_año = df['Año Movimiento'].value_counts().sort_index()
+            
+            if not movimientos_por_año.empty:
+                fig6b = px.line(
+                    x=movimientos_por_año.index,
+                    y=movimientos_por_año.values,
+                    markers=True,
+                    labels={'x': 'Año de Gestión', 'y': 'Número de Trámites'},
+                    color_discrete_sequence=['#8B5CF6']
+                )
+                fig6b.update_traces(line=dict(width=3), marker=dict(size=8))
+                configure_plotly_theme(fig6b)
+                st.plotly_chart(fig6b, use_container_width=True)
+            else:
+                st.info("Formato de fecha no compatible para la extracción anual.")
         else:
-            st.info("No hay fechas válidas para graficar la tendencia por año.")
+            st.warning("Columna de fecha del último movimiento no disponible.")
     else:
-        st.warning("La columna 'ULTIMO MOVIMIENTO FECHA ULTIMO MOV' no se encuentra en tu Excel.")
-# ─────────────────────────────────────────────────────────────────────────────
-# TAB 7 — MEDIOS  (nueva pestaña con el contenido que antes estaba en tab6)
-# ─────────────────────────────────────────────────────────────────────────────
+        st.error("Columna 'TIPO DE MOVIMIENTO' ausente.")
+    st.markdown('</div>', unsafe_allow_html=True)
 with tab7:
-    st.header("MEDIO DE TRÁMITE: INTERNET VS VENTANILLA")
+    st.markdown('<div class="premium-card">', unsafe_allow_html=True)
+    st.subheader("Medio de Trámite: Transición Digital e Internet")
+    st.markdown("Comparativa entre trámites virtuales mediante el escritorio digital vs. ventanilla física tradicional.")
+    
     if check_col('MEDIO'):
         medio_counts = df['MEDIO'].value_counts()
-        # Colores por medio
-        medio_colors = ['#3498DB', '#E74C3C', '#2ECC71', '#F39C12', '#9B59B6']
-        fig7, ax7 = plt.subplots(figsize=(7, 7))
-        wedges7, texts7, autotexts7 = ax7.pie(
-            medio_counts,
-            labels=None,
-            autopct='%1.1f%%',
-            startangle=90,
-            colors=medio_colors[:len(medio_counts)],
-            pctdistance=0.75,
-            wedgeprops=dict(edgecolor='white', linewidth=1.5)
-        )
-        for autotext in autotexts7:
-            autotext.set_fontsize(11)
-            autotext.set_fontweight('bold')
-            autotext.set_color('white')
-        ax7.axis('equal')
-        # Leyenda con nombres de cada medio
-        legend_patches7 = [
-            mpatches.Patch(color=medio_colors[i], label=label)
-            for i, label in enumerate(medio_counts.index)
-        ]
-        ax7.legend(
-            handles=legend_patches7,
-            title="Medio de Trámite",
-            title_fontsize=11,
-            fontsize=10,
-            loc='lower center',
-            bbox_to_anchor=(0.5, -0.18),
-            ncol=2,
-            frameon=True,
-            framealpha=0.9
-        )
-        ax7.set_title('Distribución por Medio de Trámite', fontsize=13, fontweight='bold', pad=15)
-        plt.tight_layout()
-        st.pyplot(fig7)
-        st.markdown(
-            """
-            <div class='dark-card' style='background-color: #1E293B; padding: 20px; border-radius: 8px; border-left: 4px solid #E74C3C; margin-top: 20px;'>
-            <b style='color:#E74C3C; font-size:1.05em;'>Digitalización de Trámites</b><br><br>
-            El <b>IMSS</b> está impulsando intensivamente su plataforma digital y el Buzón IMSS. 
-            El objetivo primordial es que los patrones puedan realizar sus movimientos a través de <b>INTERNET</b> 
-            para evitar que tengan que ir físicamente a la subdelegación, eliminando filas, agilizando la actualización 
-            y reduciendo los tiempos de respuesta de forma significativa.
-            </div>
-            """, unsafe_allow_html=True
-        )
+        
+        col1, col2 = st.columns([3, 2])
+        with col1:
+            fig7 = px.pie(
+                values=medio_counts.values,
+                names=medio_counts.index,
+                hole=0.6,
+                color_discrete_sequence=['#2563EB', '#F43F5E']
+            )
+            fig7.update_traces(
+                textposition='inside',
+                textinfo='percent+label',
+                marker=dict(line=dict(color='#FFFFFF', width=2))
+            )
+            configure_plotly_theme(fig7)
+            st.plotly_chart(fig7, use_container_width=True)
+            
+        with col2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown(
+                """
+                <div class="dark-panel">
+                    <h4>Directriz de Transformación Digital</h4>
+                    <p>El <b>Instituto Mexicano del Seguro Social</b> impulsa fuertemente el uso de herramientas digitales como el IDSE (IMSS desde su Empresa) y el Buzón IMSS.</p>
+                    <p>El predominio de las operaciones por <b>INTERNET</b> descongestiona las salas físicas de la subdelegación, reduce los tiempos de respuesta de semanas a minutos y combate la corrupción, brindando certidumbre en tiempo real a los patrones de Yucatán.</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
     else:
-        st.warning("Columna 'MEDIO' no encontrada.")
-# --- Botón Flotante Fijo ---
-st.markdown('<a href="https://www.imss.gob.mx/tramites/alta-patronal" target="_blank" class="floating-btn">💻 Trámite Alta Patronal</a>', unsafe_allow_html=True)
+        st.error("Columna 'MEDIO' no disponible.")
+    st.markdown('</div>', unsafe_allow_html=True)
+# --- Botón de Acción Flotante Fijo y Premium --- #
+st.markdown(
+    """
+    <a href="https://www.imss.gob.mx/tramites/alta-patronal" target="_blank" class="floating-action-btn">
+        <span>💻</span> Trámite de Alta Patronal Digital
+    </a>
+    """,
+    unsafe_allow_html=True
+)
