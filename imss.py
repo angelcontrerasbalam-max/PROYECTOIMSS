@@ -16,13 +16,10 @@ st.markdown(
     """
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
     <style>
-    /* Resetear fuentes y colores globales */
-    html, body, [class*="css"], .stApp {
+    html, body, .stApp {
         font-family: 'Outfit', sans-serif !important;
         background-color: #F8FAFC !important;
     }
-    
-    /* Títulos e Identidad */
     .hero-container {
         background: linear-gradient(135deg, #1E3A8A 0%, #0F172A 100%);
         padding: 40px;
@@ -68,14 +65,11 @@ st.markdown(
         color: #CBD5E1;
         margin-top: 10px;
     }
-    
     h2, h3, h4 {
         color: #1E3A8A !important;
         font-weight: 700 !important;
         font-family: 'Outfit', sans-serif !important;
     }
-    
-    /* Contenedores de Tarjetas (Cards) */
     .premium-card {
         background-color: #FFFFFF;
         padding: 25px;
@@ -90,8 +84,6 @@ st.markdown(
         box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.1), 0 4px 12px -2px rgba(0, 0, 0, 0.05);
         border-color: #3B82F6;
     }
-    
-    /* Tarjetas de Métricas Directas (KPI Cards) */
     .kpi-wrapper {
         display: flex;
         gap: 20px;
@@ -129,7 +121,6 @@ st.markdown(
     .kpi-green { background-color: #ECFDF5; color: #047857; }
     .kpi-purple { background-color: #F5F3FF; color: #6D28D9; }
     .kpi-orange { background-color: #FFF7ED; color: #C2410C; }
-    
     .kpi-info {
         display: flex;
         flex-direction: column;
@@ -148,8 +139,6 @@ st.markdown(
         letter-spacing: 1px;
         margin-top: 5px;
     }
-    
-    /* Contenedores Oscuros Elegantes */
     .dark-panel {
         background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%) !important;
         border: none !important;
@@ -171,8 +160,6 @@ st.markdown(
         font-size: 0.95em;
         line-height: 1.6;
     }
-    
-    /* Estilos de las Pestañas (Tabs) */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
         background-color: #F1F5F9;
@@ -199,8 +186,6 @@ st.markdown(
         color: #1E3A8A !important;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
     }
-    
-    /* Visualizador de Archiveros Premium */
     .archive-room {
         display: flex;
         flex-wrap: wrap;
@@ -235,8 +220,6 @@ st.markdown(
     .cabinet-box.active .cabinet-title {
         color: #10B981;
     }
-    
-    /* Cajones del Archivero */
     .drawer-grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
@@ -285,8 +268,6 @@ st.markdown(
         0% { transform: scale(1); box-shadow: 0 0 5px rgba(16, 185, 129, 0.5); }
         100% { transform: scale(1.1); box-shadow: 0 0 15px rgba(16, 185, 129, 0.9); }
     }
-    
-    /* Botón Flotante Rediseñado */
     .floating-action-btn {
         position: fixed;
         bottom: 25px;
@@ -312,8 +293,6 @@ st.markdown(
         border-color: rgba(255, 255, 255, 0.6);
         background: linear-gradient(135deg, #10B981 0%, #059669 100%);
     }
-    
-    /* Alerta de datos sintéticos */
     .simulated-banner {
         background: #FFFBEB;
         border-left: 5px solid #F59E0B;
