@@ -4,6 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import re
 import os
+
 # --- Configuración de la Página (Premium) --- #
 st.set_page_config(
     page_title="Afiliación y Vigencia - Subdelegación 33 La Ceiba",
@@ -11,6 +12,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
 # --- Fuentes y Estilos CSS Personalizados Premium --- #
 st.markdown(
     """
@@ -309,6 +311,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 # --- Banner del Encabezado (Hero Section) --- #
 st.markdown(
     """
@@ -320,6 +323,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 # --- Generador / Cargador de Datos de Respaldo --- #
 @st.cache_data
 def load_data(file_path):
@@ -407,8 +411,10 @@ def load_data(file_path):
     })
     
     return df_synthetic, True
+
 file_path = 'DATOS/PATRONES PROYECTO FINAL.xlsx'
 df, is_simulated = load_data(file_path)
+
 if is_simulated:
     st.markdown(
         """
@@ -420,13 +426,16 @@ if is_simulated:
         """,
         unsafe_allow_html=True
     )
+
 def check_col(col_name):
     return col_name in df.columns
+
 # --- Panel de Métricas Ejecutivas (KPIs) --- #
 total_patrones = len(df)
 activos_pct = (df['ESTATUS'] == 'ACTIVO').mean() * 100 if check_col('ESTATUS') else 0
 total_empleados = int(df['TRABAJADORES'].sum()) if check_col('TRABAJADORES') else 0
 digital_pct = (df['MEDIO'] == 'INTERNET').mean() * 100 if check_col('MEDIO') else 0
+
 st.markdown(
     f"""
     <div class="kpi-wrapper">
@@ -462,10 +471,12 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 # --- Buscador y Archivero Visual Premium --- #
 st.markdown('<div class="premium-card">', unsafe_allow_html=True)
 st.subheader('🔍 Búsqueda Inteligente de Registro Patronal')
 st.markdown("Busca el expediente físico en los archiveros institucionales de la subdelegación ingresando el código de registro.")
+
 registro_patronal_input = st.text_input('Ingresa el Registro Patronal para ubicar:', '', placeholder="Ej. Y12-34567-89")
 if registro_patronal_input:
     if check_col('REGISTRO PATRONAL'):
@@ -533,6 +544,7 @@ if registro_patronal_input:
     else:
         st.error("No se encontró la columna 'REGISTRO PATRONAL' en el conjunto de datos.")
 st.markdown('</div>', unsafe_allow_html=True)
+
 # Helper MEJORADO para legibilidad de gráficas Plotly
 def configure_plotly_theme(fig):
     fig.update_layout(
@@ -560,6 +572,7 @@ def configure_plotly_theme(fig):
         tickfont=dict(color="#0F172A", size=12, family="Outfit")
     )
     return fig
+
 # --- Pestañas de Análisis e Información Ejecutiva --- #
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "📊 Estatus Patronal", 
@@ -570,6 +583,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "📑 Movimientos Afiliatorios",
     "🌐 Medios Digitales"
 ])
+
 with tab1:
     st.markdown('<div class="premium-card">', unsafe_allow_html=True)
     st.subheader("Estatus Patronal - Sección Norte")
@@ -610,6 +624,7 @@ with tab1:
     else:
         st.error("Columna 'ESTATUS' no encontrada en la base de datos.")
     st.markdown('</div>', unsafe_allow_html=True)
+
 with tab2:
     st.markdown('<div class="premium-card">', unsafe_allow_html=True)
     st.subheader("Principales Motivos de Baja Patronal")
@@ -658,6 +673,7 @@ with tab2:
     else:
         st.error("Columnas 'ESTATUS' o 'MOTIVO BAJA' faltantes.")
     st.markdown('</div>', unsafe_allow_html=True)
+
 with tab3:
     st.markdown('<div class="premium-card">', unsafe_allow_html=True)
     st.subheader("Distribución de Sectores y Actividades Económicas")
@@ -706,6 +722,7 @@ with tab3:
     else:
         st.error("Columna 'ACTIVIDAD' no encontrada.")
     st.markdown('</div>', unsafe_allow_html=True)
+
 with tab4:
     st.markdown('<div class="premium-card">', unsafe_allow_html=True)
     st.subheader("Análisis de Primas de Riesgo de Trabajo")
@@ -751,19 +768,31 @@ with tab4:
             title="Comparativa de Primas de Riesgo (Anterior vs Actual)"
         )
         
-        # Agregar línea de control visible en toda la gráfica
+        # Calcular límites dinámicos para los ejes para hacer zoom perfecto
+        min_v = min(df['PRIMA DE RIESGO ANTERIOR'].min(), df['PRIMA DE RIESGO ACTUAL'].min())
+        max_v = max(df['PRIMA DE RIESGO ANTERIOR'].max(), df['PRIMA DE RIESGO ACTUAL'].max())
+        
+        # Añadir un pequeño margen (10%) para que los puntos no queden pegados al borde
+        margen = (max_v - min_v) * 0.1
+        if margen == 0: margen = 0.1 # Por si todos los valores son idénticos
+        lim_inf = max(0, min_v - margen) # Evitar bajar de 0 si las primas son positivas
+        lim_sup = max_v + margen
+
+        # Agregar línea de control dinámica visible en todo el nuevo rango de datos
         fig4.add_trace(
             go.Scatter(
-                x=[0, 8],
-                y=[0, 8],
+                x=[lim_inf, lim_sup],
+                y=[lim_inf, lim_sup],
                 mode='lines',
                 name='Misma Prima (Sin Siniestralidad)',
                 line=dict(color='#475569', width=2, dash='dash')
             )
         )
-        # Agregar Anotaciones Textuales para facilitar la interpretación
+
+        # Posicionar anotaciones textualmente basadas en las proporciones de la gráfica (20% y 80%)
         fig4.add_annotation(
-            x=2, y=6.5,
+            x=lim_inf + (lim_sup - lim_inf) * 0.2, 
+            y=lim_sup - (lim_sup - lim_inf) * 0.15,
             text="<b>↑ Aumentó su Prima</b><br><span style='font-size:11px'>Mayor Siniestralidad</span>",
             showarrow=False,
             font=dict(color="#E11D48", size=14),
@@ -773,7 +802,8 @@ with tab4:
             borderpad=6
         )
         fig4.add_annotation(
-            x=6.5, y=2,
+            x=lim_sup - (lim_sup - lim_inf) * 0.2, 
+            y=lim_inf + (lim_sup - lim_inf) * 0.15,
             text="<b>↓ Redujo su Prima</b><br><span style='font-size:11px'>Mejor Seguridad Integral</span>",
             showarrow=False,
             font=dict(color="#059669", size=14),
@@ -782,10 +812,11 @@ with tab4:
             borderwidth=1,
             borderpad=6
         )
+
         fig4.update_traces(marker=dict(line=dict(width=1, color='rgba(0,0,0,0.5)')), selector=dict(mode='markers'))
         fig4.update_layout(
-            xaxis_range=[0, 8], 
-            yaxis_range=[0, 8],
+            xaxis_range=[lim_inf, lim_sup], 
+            yaxis_range=[lim_inf, lim_sup],
             legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
         )
         configure_plotly_theme(fig4)
@@ -804,6 +835,7 @@ with tab4:
     else:
         st.error("No se cuentan con los datos de Primas de Riesgo necesarios.")
     st.markdown('</div>', unsafe_allow_html=True)
+
 with tab5:
     st.markdown('<div class="premium-card">', unsafe_allow_html=True)
     st.subheader("Promedio de Trabajadores Asegurados por Sector")
@@ -855,6 +887,7 @@ with tab5:
     else:
         st.error("Las columnas 'ACTIVIDAD' o 'TRABAJADORES' no están completas en el set de datos.")
     st.markdown('</div>', unsafe_allow_html=True)
+
 with tab6:
     st.markdown('<div class="premium-card">', unsafe_allow_html=True)
     st.subheader("Tipos de Movimientos Afiliatorios Oficiales")
@@ -931,6 +964,7 @@ with tab6:
     else:
         st.error("Columna 'TIPO DE MOVIMIENTO' ausente.")
     st.markdown('</div>', unsafe_allow_html=True)
+
 with tab7:
     st.markdown('<div class="premium-card">', unsafe_allow_html=True)
     st.subheader("Medio de Trámite: Transición Digital e Internet")
@@ -972,6 +1006,7 @@ with tab7:
     else:
         st.error("Columna 'MEDIO' no disponible.")
     st.markdown('</div>', unsafe_allow_html=True)
+
 st.markdown(
     """
     <a href="https://www.imss.gob.mx/tramites/alta-patronal" target="_blank" class="floating-action-btn">
