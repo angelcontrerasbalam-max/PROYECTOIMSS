@@ -323,7 +323,6 @@ st.markdown(
 # --- Generador / Cargador de Datos de Respaldo --- #
 @st.cache_data
 def load_data(file_path):
-    # Intentar cargar datos reales primero
     if os.path.exists(file_path):
         try:
             df = pd.read_excel(file_path)
@@ -334,15 +333,12 @@ def load_data(file_path):
         except Exception as e:
             st.error(f"Error al cargar el archivo Excel real: {e}")
             
-    # Si no existe o falla, generar base sintética realista de alta calidad
     import numpy as np
     np.random.seed(42)
     n_rows = 380
     
-    # Generar Registro Patronal (Format: YXX-XXXXX-XX)
     reg_pat = [f"Y{np.random.randint(10,99)}-{np.random.randint(10000,99999)}-{np.random.randint(10,99)}" for _ in range(n_rows)]
     
-    # Generar Ubicación de Archivo
     secciones = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
     ubicaciones = []
     for _ in range(n_rows):
@@ -411,10 +407,8 @@ def load_data(file_path):
     })
     
     return df_synthetic, True
-# Cargar el Dataframe
 file_path = 'DATOS/PATRONES PROYECTO FINAL.xlsx'
 df, is_simulated = load_data(file_path)
-# Mostrar banner si estamos usando datos sintéticos
 if is_simulated:
     st.markdown(
         """
@@ -426,11 +420,9 @@ if is_simulated:
         """,
         unsafe_allow_html=True
     )
-# Función para verificar columnas
 def check_col(col_name):
     return col_name in df.columns
 # --- Panel de Métricas Ejecutivas (KPIs) --- #
-# Se calcula la información dinámicamente
 total_patrones = len(df)
 activos_pct = (df['ESTATUS'] == 'ACTIVO').mean() * 100 if check_col('ESTATUS') else 0
 total_empleados = int(df['TRABAJADORES'].sum()) if check_col('TRABAJADORES') else 0
@@ -486,7 +478,6 @@ if registro_patronal_input:
             if check_col('UBICACIÓN DE ARCHIVO'):
                 location_str = str(filtered_patron['UBICACIÓN DE ARCHIVO'].iloc[0])
                 
-                # Función robusta de parseo de ubicación
                 def parse_location(location_string):
                     cabinet_match = re.search(r'A[R]?CHIVERO\s*(\d+)', location_string, re.IGNORECASE)
                     fila_match = re.search(r'FILA\s*(\d+)', location_string, re.IGNORECASE)
@@ -501,10 +492,8 @@ if registro_patronal_input:
                 
                 if cabinet and fila and seccion:
                     st.success(f"📂 El expediente físico está localizado en el **Archivero {cabinet}, Fila {fila}, Sección {seccion}**.")
-                    
                     st.markdown("#### Ubicación en Sala de Archivo:")
                     
-                    # Generar Visualizador de Archiveros con Estilo 3D/Premium en CSS
                     html_archivero = "<div class='archive-room'>"
                     for c in range(1, 6):
                         is_active = (c == cabinet)
@@ -515,12 +504,10 @@ if registro_patronal_input:
                             <div class="cabinet-title">Archivero {c}</div>
                             <div class="drawer-grid">
                         """
-                        # Cabeceras de columnas (A - G)
                         html_archivero += "<div class='drawer-header-cell'></div>"
                         for s_char in ['A', 'B', 'C', 'D', 'E', 'F', 'G']:
                             html_archivero += f"<div class='drawer-header-cell'>{s_char}</div>"
                             
-                        # Filas (1 - 7)
                         for r in range(1, 8):
                             html_archivero += f"<div class='drawer-row-num'>{r}</div>"
                             for s_char in ['A', 'B', 'C', 'D', 'E', 'F', 'G']:
@@ -536,10 +523,9 @@ if registro_patronal_input:
                                 
                         html_archivero += "</div></div>"
                     html_archivero += "</div>"
-                    
                     st.markdown(html_archivero, unsafe_allow_html=True)
                 else:
-                    st.warning(f"La ubicación '{location_str}' no coincide con el formato esperado ('ARCHIVERO X FILA Y SECCIÓN Z').")
+                    st.warning(f"La ubicación '{location_str}' no coincide con el formato esperado.")
             else:
                 st.info("Columna 'UBICACIÓN DE ARCHIVO' no disponible en el conjunto de datos.")
         else:
@@ -547,21 +533,32 @@ if registro_patronal_input:
     else:
         st.error("No se encontró la columna 'REGISTRO PATRONAL' en el conjunto de datos.")
 st.markdown('</div>', unsafe_allow_html=True)
-# Helper para estandarizar el tema de Plotly y que luzca profesional
+# Helper MEJORADO para legibilidad de gráficas Plotly
 def configure_plotly_theme(fig):
     fig.update_layout(
         font_family="Outfit, sans-serif",
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=20, r=20, t=40, b=20),
-        title_font=dict(size=16, color="#1E3A8A", family="Outfit"),
+        margin=dict(l=20, r=20, t=60, b=40),
+        title_font=dict(size=20, color="#1E3A8A", family="Outfit", weight="bold"),
         legend=dict(
-            font=dict(size=11, color="#475569"),
-            bgcolor="rgba(255,255,255,0.7)"
+            font=dict(size=12, color="#0F172A"),
+            bgcolor="rgba(255,255,255,0.9)",
+            bordercolor="#E2E8F0",
+            borderwidth=1
         )
     )
-    fig.update_xaxes(showgrid=True, gridcolor="#E2E8F0", linecolor="#CBD5E1", title_font=dict(size=11, color="#64748B"))
-    fig.update_yaxes(showgrid=True, gridcolor="#E2E8F0", linecolor="#CBD5E1", title_font=dict(size=11, color="#64748B"))
+    # Se añade tickfont explícito con color oscuro (#0F172A) para que las leyendas sean legibles
+    fig.update_xaxes(
+        showgrid=True, gridcolor="#E2E8F0", linecolor="#CBD5E1", 
+        title_font=dict(size=14, color="#1E3A8A", weight="bold"),
+        tickfont=dict(color="#0F172A", size=12, family="Outfit")
+    )
+    fig.update_yaxes(
+        showgrid=True, gridcolor="#E2E8F0", linecolor="#CBD5E1", 
+        title_font=dict(size=14, color="#1E3A8A", weight="bold"),
+        tickfont=dict(color="#0F172A", size=12, family="Outfit")
+    )
     return fig
 # --- Pestañas de Análisis e Información Ejecutiva --- #
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
@@ -592,7 +589,8 @@ with tab1:
             fig1.update_traces(
                 textposition='inside',
                 textinfo='percent+label',
-                marker=dict(line=dict(color='#FFFFFF', width=2))
+                marker=dict(line=dict(color='#FFFFFF', width=2)),
+                insidetextfont=dict(size=14, color='white')
             )
             configure_plotly_theme(fig1)
             st.plotly_chart(fig1, use_container_width=True)
@@ -670,14 +668,22 @@ with tab3:
         
         col1, col2 = st.columns([3, 2])
         with col1:
+            # CORRECCIÓN: Título claro, etiquetas en los ejes y números dentro de la barra
             fig3 = px.bar(
                 x=actividad_counts.values,
                 y=actividad_counts.index,
                 orientation='h',
-                labels={'x': 'Número de Patrones', 'y': ''},
+                labels={'x': 'Cantidad Total de Patrones', 'y': 'Sector / Actividad Económica'},
                 color=actividad_counts.values,
-                color_continuous_scale=px.colors.sequential.Plotly3_r
+                color_continuous_scale=px.colors.sequential.Plotly3_r,
+                text=actividad_counts.values, # Muestra el número dentro de la gráfica
+                title="Volumen de Patrones por Actividad"
             )
+            fig3.update_traces(
+                textposition='auto', 
+                textfont=dict(size=14, color='white', family="Outfit", weight="bold")
+            )
+            fig3.update_layout(yaxis=dict(tickmode='linear')) # Asegura que todas las etiquetas Y se muestren
             fig3.update_coloraxes(showscale=False)
             configure_plotly_theme(fig3)
             st.plotly_chart(fig3, use_container_width=True)
@@ -728,7 +734,7 @@ with tab4:
             
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Dispersión con Plotly
+        # CORRECCIÓN: Dispersión con Plotly más clara
         fig4 = px.scatter(
             df,
             x='PRIMA DE RIESGO ANTERIOR',
@@ -737,23 +743,51 @@ with tab4:
             size=df['CAMBIO PRIMA DE RIESGO'].abs().clip(0.1, 5),
             hover_data=['REGISTRO PATRONAL', 'ACTIVIDAD'],
             color_continuous_scale=px.colors.diverging.RdYlBu_r,
-            labels={'CAMBIO PRIMA DE RIESGO': 'Diferencia'}
+            labels={
+                'CAMBIO PRIMA DE RIESGO': 'Aumento/Disminución (%)',
+                'PRIMA DE RIESGO ANTERIOR': 'Prima Año Pasado (%)',
+                'PRIMA DE RIESGO ACTUAL': 'Prima de Este Año (%)'
+            },
+            title="Comparativa de Primas de Riesgo (Anterior vs Actual)"
         )
         
-        # Agregar línea de control (Sin Cambio)
-        min_v = min(df['PRIMA DE RIESGO ANTERIOR'].min(), df['PRIMA DE RIESGO ACTUAL'].min())
-        max_v = max(df['PRIMA DE RIESGO ANTERIOR'].max(), df['PRIMA DE RIESGO ACTUAL'].max())
+        # Agregar línea de control visible en toda la gráfica
         fig4.add_trace(
             go.Scatter(
-                x=[min_v, max_v],
-                y=[min_v, max_v],
+                x=[0, 8],
+                y=[0, 8],
                 mode='lines',
                 name='Misma Prima (Sin Siniestralidad)',
-                line=dict(color='gray', width=1.5, dash='dash')
+                line=dict(color='#475569', width=2, dash='dash')
             )
         )
-        
-        fig4.update_layout(title="Comparativa y Tendencia de Primas (Anterior vs Actual)")
+        # Agregar Anotaciones Textuales para facilitar la interpretación
+        fig4.add_annotation(
+            x=2, y=6.5,
+            text="<b>↑ Aumentó su Prima</b><br><span style='font-size:11px'>Mayor Siniestralidad</span>",
+            showarrow=False,
+            font=dict(color="#E11D48", size=14),
+            bgcolor="rgba(255,255,255,0.9)",
+            bordercolor="#E11D48",
+            borderwidth=1,
+            borderpad=6
+        )
+        fig4.add_annotation(
+            x=6.5, y=2,
+            text="<b>↓ Redujo su Prima</b><br><span style='font-size:11px'>Mejor Seguridad Integral</span>",
+            showarrow=False,
+            font=dict(color="#059669", size=14),
+            bgcolor="rgba(255,255,255,0.9)",
+            bordercolor="#059669",
+            borderwidth=1,
+            borderpad=6
+        )
+        fig4.update_traces(marker=dict(line=dict(width=1, color='rgba(0,0,0,0.5)')), selector=dict(mode='markers'))
+        fig4.update_layout(
+            xaxis_range=[0, 8], 
+            yaxis_range=[0, 8],
+            legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
+        )
         configure_plotly_theme(fig4)
         st.plotly_chart(fig4, use_container_width=True)
         
@@ -782,6 +816,7 @@ with tab5:
         
         col1, col2 = st.columns([3, 2])
         with col1:
+            # CORRECCIÓN: Título explícito, etiquetas legibles
             fig5 = px.bar(
                 avg_workers,
                 x='TRABAJADORES',
@@ -789,8 +824,15 @@ with tab5:
                 orientation='h',
                 color='TRABAJADORES',
                 color_continuous_scale=px.colors.sequential.Tealgrn,
-                labels={'TRABAJADORES': 'Promedio de Empleados por Registro', 'ACTIVIDAD': ''}
+                labels={'TRABAJADORES': 'Promedio de Trabajadores por Empresa', 'ACTIVIDAD': 'Sector Económico'},
+                text=avg_workers['TRABAJADORES'].apply(lambda x: f"{x:.0f} emp."), # Muestra texto de empleados
+                title="Volumen Promedio de Plantilla Laboral"
             )
+            fig5.update_traces(
+                textposition='auto', 
+                textfont=dict(size=13, color='white', weight="bold")
+            )
+            fig5.update_layout(yaxis=dict(tickmode='linear')) # Asegura mostrar todas las actividades en el eje Y
             fig5.update_coloraxes(showscale=False)
             configure_plotly_theme(fig5)
             st.plotly_chart(fig5, use_container_width=True)
@@ -821,7 +863,6 @@ with tab6:
     if check_col('TIPO DE MOVIMIENTO'):
         movimiento_counts = df['TIPO DE MOVIMIENTO'].value_counts()
         
-        # Mapear nombres de trámite
         tramite_map = {
             '1': '1 — Alta Patronal',
             '2': '2 — Cambio de Domicilio',
@@ -836,12 +877,14 @@ with tab6:
                 values=movimiento_counts.values,
                 names=mov_index_mapped,
                 hole=0.6,
-                color_discrete_sequence=px.colors.qualitative.Prism
+                color_discrete_sequence=px.colors.qualitative.Prism,
+                title="Proporción por Tipo de Trámite"
             )
             fig6a.update_traces(
                 textposition='inside',
                 textinfo='percent',
-                marker=dict(line=dict(color='#FFFFFF', width=2))
+                marker=dict(line=dict(color='#FFFFFF', width=2)),
+                insidetextfont=dict(size=14, color='white')
             )
             configure_plotly_theme(fig6a)
             st.plotly_chart(fig6a, use_container_width=True)
@@ -864,7 +907,6 @@ with tab6:
             
         st.markdown("<br><hr style='border-top:1px solid #E2E8F0;'/><br>", unsafe_allow_html=True)
         
-        # Línea de tendencia temporal
         st.markdown("##### Frecuencia e Historial de Movimientos por Año")
         if check_col('ULTIMO MOVIMIENTO FECHA ULTIMO MOV'):
             df['Año Movimiento'] = df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'].dt.year.astype('Int64')
@@ -875,8 +917,9 @@ with tab6:
                     x=movimientos_por_año.index,
                     y=movimientos_por_año.values,
                     markers=True,
-                    labels={'x': 'Año de Gestión', 'y': 'Número de Trámites'},
-                    color_discrete_sequence=['#8B5CF6']
+                    labels={'x': 'Año de Gestión', 'y': 'Número de Trámites Realizados'},
+                    color_discrete_sequence=['#8B5CF6'],
+                    title="Tendencia Histórica de Trámites (Por Año)"
                 )
                 fig6b.update_traces(line=dict(width=3), marker=dict(size=8))
                 configure_plotly_theme(fig6b)
@@ -902,12 +945,14 @@ with tab7:
                 values=medio_counts.values,
                 names=medio_counts.index,
                 hole=0.6,
-                color_discrete_sequence=['#2563EB', '#F43F5E']
+                color_discrete_sequence=['#2563EB', '#F43F5E'],
+                title="Trámites por Internet vs Ventanilla"
             )
             fig7.update_traces(
                 textposition='inside',
                 textinfo='percent+label',
-                marker=dict(line=dict(color='#FFFFFF', width=2))
+                marker=dict(line=dict(color='#FFFFFF', width=2)),
+                insidetextfont=dict(size=14, color='white')
             )
             configure_plotly_theme(fig7)
             st.plotly_chart(fig7, use_container_width=True)
@@ -927,7 +972,6 @@ with tab7:
     else:
         st.error("Columna 'MEDIO' no disponible.")
     st.markdown('</div>', unsafe_allow_html=True)
-# --- Botón de Acción Flotante Fijo y Premium --- #
 st.markdown(
     """
     <a href="https://www.imss.gob.mx/tramites/alta-patronal" target="_blank" class="floating-action-btn">
