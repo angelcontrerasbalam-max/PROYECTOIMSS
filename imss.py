@@ -224,7 +224,7 @@ st.markdown(
     }
     .drawer-grid {
         display: grid;
-        grid-template-columns: repeat(7, 1fr);
+        grid-template-columns: repeat(8, 1fr);
         gap: 3px;
     }
     .drawer-header-cell {
@@ -822,6 +822,32 @@ with tab4:
         configure_plotly_theme(fig4)
         st.plotly_chart(fig4, use_container_width=True)
         
+        st.markdown("<br><hr style='border-top:1px solid #E2E8F0;'/><br>", unsafe_allow_html=True)
+        
+        # NUEVA GRÁFICA: Prima Promedio por Sector
+        st.markdown("##### 📊 Análisis de Riesgo por Sector Económico")
+        st.markdown("Identifica qué actividades económicas concentran el mayor nivel de siniestralidad y, por tanto, las primas más altas.")
+        
+        avg_prima_sector = df.groupby('ACTIVIDAD')['PRIMA DE RIESGO ACTUAL'].mean().reset_index()
+        avg_prima_sector = avg_prima_sector.sort_values(by='PRIMA DE RIESGO ACTUAL', ascending=True)
+        
+        fig4b = px.bar(
+            avg_prima_sector,
+            x='PRIMA DE RIESGO ACTUAL',
+            y='ACTIVIDAD',
+            orientation='h',
+            color='PRIMA DE RIESGO ACTUAL',
+            color_continuous_scale=px.colors.sequential.OrRd,
+            labels={'PRIMA DE RIESGO ACTUAL': 'Prima Promedio (%)', 'ACTIVIDAD': 'Sector Económico'},
+            text=avg_prima_sector['PRIMA DE RIESGO ACTUAL'].apply(lambda x: f"{x:.2f}%"),
+            title="Prima de Riesgo Promedio por Sector"
+        )
+        fig4b.update_traces(textposition='auto', textfont=dict(size=14, color='white', family="Outfit", weight='bold'))
+        fig4b.update_layout(yaxis=dict(tickmode='linear'))
+        fig4b.update_coloraxes(showscale=False)
+        configure_plotly_theme(fig4b)
+        st.plotly_chart(fig4b, use_container_width=True)
+
         st.markdown(
             """
             <div class="dark-panel" style="margin-top: 15px;">
