@@ -206,10 +206,7 @@ st.markdown(
         position: relative;
     }
     .cabinet-box.active {
-        border-color: #10B981;
         background: #FFFFFF;
-        box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.25);
-        transform: translateY(-5px) scale(1.03);
     }
     .cabinet-title {
         text-align: center;
@@ -218,9 +215,6 @@ st.markdown(
         margin-bottom: 12px;
         font-size: 1.05em;
         color: #1E3A8A;
-    }
-    .cabinet-box.active .cabinet-title {
-        color: #10B981;
     }
     .drawer-grid {
         display: grid;
@@ -336,13 +330,13 @@ def load_data(file_path):
             return df, False
         except Exception as e:
             st.error(f"Error al cargar el archivo Excel real: {e}")
-            
+
     import numpy as np
     np.random.seed(42)
     n_rows = 380
-    
+
     reg_pat = [f"Y{np.random.randint(10,99)}-{np.random.randint(10000,99999)}-{np.random.randint(10,99)}" for _ in range(n_rows)]
-    
+
     secciones = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
     ubicaciones = []
     for _ in range(n_rows):
@@ -350,11 +344,11 @@ def load_data(file_path):
         f = np.random.randint(1, 8)
         s = np.random.choice(secciones)
         ubicaciones.append(f"ARCHIVERO {c} FILA {f} SECCIÓN {s}")
-        
+
     estatus_choices = ['ACTIVO', 'BAJA', 'SUSPENDIDO']
     estatus_probs = [0.884, 0.100, 0.016]
     estatus = np.random.choice(estatus_choices, size=n_rows, p=estatus_probs)
-    
+
     motivos_baja = []
     for est in estatus:
         if est == 'BAJA':
@@ -366,7 +360,7 @@ def load_data(file_path):
             ]))
         else:
             motivos_baja.append(None)
-            
+
     actividades = np.random.choice([
         "SERVICIOS DE RESTAURANTES Y HOTELES",
         "CONSTRUCCIÓN DE VIVIENDA Y EDIFICACIONES",
@@ -376,26 +370,26 @@ def load_data(file_path):
         "INVESTIGACIÓN Y DESARROLLO CIENTÍFICO",
         "AGRICULTURA Y CITRICULTURA"
     ], size=n_rows, p=[0.30, 0.22, 0.18, 0.12, 0.08, 0.05, 0.05])
-    
+
     prima_ant = np.round(np.random.uniform(0.5, 7.5, size=n_rows), 5)
     change = np.random.choice([-0.4, 0.0, 0.4, 0.8, -0.6], size=n_rows, p=[0.25, 0.4, 0.2, 0.08, 0.07])
     prima_act = np.clip(np.round(prima_ant + change + np.random.normal(0, 0.05, size=n_rows), 5), 0.5, 7.585)
-    
+
     trabajadores = np.random.randint(2, 450, size=n_rows)
     for i in range(n_rows):
         if "CONSTRUCCIÓN" in actividades[i]:
             trabajadores[i] = np.random.randint(40, 580)
         elif "SERVICIOS" in actividades[i]:
             trabajadores[i] = np.random.randint(8, 250)
-            
+
     tipo_mov = np.random.choice(['1', '2', '3', '4'], size=n_rows, p=[0.45, 0.25, 0.15, 0.15])
-    
+
     start_date = pd.to_datetime('2018-01-01')
     end_date = pd.to_datetime('2026-05-01')
     dates = pd.to_datetime(np.random.randint(start_date.value, end_date.value, size=n_rows))
-    
+
     medios = np.random.choice(['INTERNET', 'VENTANILLA'], size=n_rows, p=[0.74, 0.26])
-    
+
     df_synthetic = pd.DataFrame({
         'REGISTRO PATRONAL': reg_pat,
         'UBICACIÓN DE ARCHIVO': ubicaciones,
@@ -409,7 +403,7 @@ def load_data(file_path):
         'ULTIMO MOVIMIENTO FECHA ULTIMO MOV': dates,
         'MEDIO': medios
     })
-    
+
     return df_synthetic, True
 
 file_path = 'DATOS/PATRONES PROYECTO FINAL.xlsx'
@@ -481,35 +475,34 @@ registro_patronal_input = st.text_input('Ingresa el Registro Patronal para ubica
 if registro_patronal_input:
     if check_col('REGISTRO PATRONAL'):
         filtered_patron = df[df['REGISTRO PATRONAL'].astype(str).str.contains(registro_patronal_input, case=False, na=False)]
-        
+
         if not filtered_patron.empty:
             st.markdown("#### Datos del Patrón Encontrado:")
             st.dataframe(filtered_patron.reset_index(drop=True), use_container_width=True)
-            
+
             if check_col('UBICACIÓN DE ARCHIVO'):
                 location_str = str(filtered_patron['UBICACIÓN DE ARCHIVO'].iloc[0])
-                
+
                 def parse_location(location_string):
                     cabinet_match = re.search(r'A[R]?CHIVERO\s*(\d+)', location_string, re.IGNORECASE)
                     fila_match = re.search(r'FILA\s*(\d+)', location_string, re.IGNORECASE)
                     seccion_match = re.search(r'SECCI[OÓ]?N\s*([A-G])', location_string, re.IGNORECASE)
-                    
                     cabinet = int(cabinet_match.group(1)) if cabinet_match else None
                     fila = int(fila_match.group(1)) if fila_match else None
                     seccion = seccion_match.group(1).upper() if seccion_match else None
                     return cabinet, fila, seccion
-                    
+
                 cabinet, fila, seccion = parse_location(location_str)
-                
+
                 if cabinet and fila and seccion:
                     st.success(f"📂 El expediente físico está localizado en el **Archivero {cabinet}, Fila {fila}, Sección {seccion}**.")
                     st.markdown("#### Ubicación en Sala de Archivo:")
-                    
+
                     html_archivero = "<div class='archive-room'>"
                     for c in range(1, 6):
                         is_active = (c == cabinet)
                         active_class = "active" if is_active else ""
-                        
+
                         html_archivero += f"""
                         <div class="cabinet-box {active_class}">
                             <div class="cabinet-title">Archivero {c}</div>
@@ -518,7 +511,7 @@ if registro_patronal_input:
                         html_archivero += "<div class='drawer-header-cell'></div>"
                         for s_char in ['A', 'B', 'C', 'D', 'E', 'F', 'G']:
                             html_archivero += f"<div class='drawer-header-cell'>{s_char}</div>"
-                            
+
                         for r in range(1, 8):
                             html_archivero += f"<div class='drawer-row-num'>{r}</div>"
                             for s_char in ['A', 'B', 'C', 'D', 'E', 'F', 'G']:
@@ -528,10 +521,9 @@ if registro_patronal_input:
                                 else:
                                     bg_style = ""
                                     text = "&nbsp;"
-                                    
                                 tooltip = f"Archivero {c}, Fila {r}, Sección {s_char}"
                                 html_archivero += f'<div class="drawer-cell {bg_style}" title="{tooltip}">{text}</div>'
-                                
+
                         html_archivero += "</div></div>"
                     html_archivero += "</div>"
                     st.markdown(html_archivero, unsafe_allow_html=True)
@@ -560,14 +552,13 @@ def configure_plotly_theme(fig):
             borderwidth=1
         )
     )
-    # Se añade tickfont explícito con color oscuro (#0F172A) para que las leyendas sean legibles
     fig.update_xaxes(
-        showgrid=True, gridcolor="#E2E8F0", linecolor="#CBD5E1", 
+        showgrid=True, gridcolor="#E2E8F0", linecolor="#CBD5E1",
         title_font=dict(size=14, color="#1E3A8A", weight="bold"),
         tickfont=dict(color="#0F172A", size=12, family="Outfit")
     )
     fig.update_yaxes(
-        showgrid=True, gridcolor="#E2E8F0", linecolor="#CBD5E1", 
+        showgrid=True, gridcolor="#E2E8F0", linecolor="#CBD5E1",
         title_font=dict(size=14, color="#1E3A8A", weight="bold"),
         tickfont=dict(color="#0F172A", size=12, family="Outfit")
     )
@@ -575,11 +566,11 @@ def configure_plotly_theme(fig):
 
 # --- Pestañas de Análisis e Información Ejecutiva --- #
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-    "📊 Estatus Patronal", 
-    "📉 Motivos de Baja", 
-    "🏭 Actividades Económicas", 
-    "⚠️ Primas de Riesgo", 
-    "👷 Trabajadores Asegurados", 
+    "📊 Estatus Patronal",
+    "📉 Motivos de Baja",
+    "🏭 Actividades Económicas",
+    "⚠️ Primas de Riesgo",
+    "👷 Trabajadores Asegurados",
     "📑 Movimientos Afiliatorios",
     "🌐 Medios Digitales"
 ])
@@ -588,10 +579,10 @@ with tab1:
     st.markdown('<div class="premium-card">', unsafe_allow_html=True)
     st.subheader("Estatus Patronal - Sección Norte")
     st.markdown("Distribución global de los registros patronales vigentes vs. suspendidos y dados de baja.")
-    
+
     if check_col('ESTATUS'):
         estatus_counts = df['ESTATUS'].value_counts()
-        
+
         col1, col2 = st.columns([3, 2])
         with col1:
             fig1 = px.pie(
@@ -608,7 +599,7 @@ with tab1:
             )
             configure_plotly_theme(fig1)
             st.plotly_chart(fig1, use_container_width=True)
-            
+
         with col2:
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown(
@@ -629,13 +620,13 @@ with tab2:
     st.markdown('<div class="premium-card">', unsafe_allow_html=True)
     st.subheader("Principales Motivos de Baja Patronal")
     st.markdown("Clasificación de expedientes inactivos según causas administrativas y legales.")
-    
+
     if check_col('ESTATUS') and check_col('MOTIVO BAJA'):
         bajas_df = df[df['ESTATUS'] == 'BAJA']
-        
+
         if not bajas_df.empty and bajas_df['MOTIVO BAJA'].notna().sum() > 0:
             baja_motivos = bajas_df['MOTIVO BAJA'].value_counts()
-            
+
             col1, col2 = st.columns([3, 2])
             with col1:
                 fig2 = px.pie(
@@ -651,7 +642,7 @@ with tab2:
                 )
                 configure_plotly_theme(fig2)
                 st.plotly_chart(fig2, use_container_width=True)
-                
+
             with col2:
                 st.markdown("<br>", unsafe_allow_html=True)
                 st.markdown(
@@ -678,13 +669,12 @@ with tab3:
     st.markdown('<div class="premium-card">', unsafe_allow_html=True)
     st.subheader("Distribución de Sectores y Actividades Económicas")
     st.markdown("Top 10 ramas de actividad con mayor concentración de patrones en la delegación.")
-    
+
     if check_col('ACTIVIDAD'):
         actividad_counts = df['ACTIVIDAD'].value_counts().head(10).sort_values(ascending=True)
-        
+
         col1, col2 = st.columns([3, 2])
         with col1:
-            # CORRECCIÓN: Título claro, etiquetas en los ejes y números dentro de la barra
             fig3 = px.bar(
                 x=actividad_counts.values,
                 y=actividad_counts.index,
@@ -692,18 +682,18 @@ with tab3:
                 labels={'x': 'Cantidad Total de Patrones', 'y': 'Sector / Actividad Económica'},
                 color=actividad_counts.values,
                 color_continuous_scale=px.colors.sequential.Plotly3_r,
-                text=actividad_counts.values, # Muestra el número dentro de la gráfica
+                text=actividad_counts.values,
                 title="Volumen de Patrones por Actividad"
             )
             fig3.update_traces(
-                textposition='auto', 
+                textposition='auto',
                 textfont=dict(size=14, color='white', family="Outfit", weight="bold")
             )
-            fig3.update_layout(yaxis=dict(tickmode='linear')) # Asegura que todas las etiquetas Y se muestren
+            fig3.update_layout(yaxis=dict(tickmode='linear'))
             fig3.update_coloraxes(showscale=False)
             configure_plotly_theme(fig3)
             st.plotly_chart(fig3, use_container_width=True)
-            
+
         with col2:
             st.markdown(
                 """
@@ -727,12 +717,12 @@ with tab4:
     st.markdown('<div class="premium-card">', unsafe_allow_html=True)
     st.subheader("Análisis de Primas de Riesgo de Trabajo")
     st.markdown("Monitoreo anual de las fluctuaciones en la clasificación de siniestralidad obrero-patronal.")
-    
+
     if check_col('PRIMA DE RIESGO ACTUAL') and check_col('PRIMA DE RIESGO ANTERIOR') and check_col('REGISTRO PATRONAL'):
         df['PRIMA DE RIESGO ACTUAL'] = pd.to_numeric(df['PRIMA DE RIESGO ACTUAL'], errors='coerce').fillna(0)
         df['PRIMA DE RIESGO ANTERIOR'] = pd.to_numeric(df['PRIMA DE RIESGO ANTERIOR'], errors='coerce').fillna(0)
         df['CAMBIO PRIMA DE RIESGO'] = df['PRIMA DE RIESGO ACTUAL'] - df['PRIMA DE RIESGO ANTERIOR']
-        
+
         c1, c2 = st.columns(2)
         with c1:
             st.markdown("##### 📈 Top 5 Aumentos de Prima")
@@ -748,10 +738,9 @@ with tab4:
                 top_dec[['REGISTRO PATRONAL', 'PRIMA DE RIESGO ANTERIOR', 'PRIMA DE RIESGO ACTUAL', 'CAMBIO PRIMA DE RIESGO']].reset_index(drop=True),
                 use_container_width=True
             )
-            
+
         st.markdown("<br>", unsafe_allow_html=True)
-        
-        # CORRECCIÓN: Dispersión con Plotly más clara
+
         fig4 = px.scatter(
             df,
             x='PRIMA DE RIESGO ANTERIOR',
@@ -767,18 +756,14 @@ with tab4:
             },
             title="Comparativa de Primas de Riesgo (Anterior vs Actual)"
         )
-        
-        # Calcular límites dinámicos para los ejes para hacer zoom perfecto
+
         min_v = min(df['PRIMA DE RIESGO ANTERIOR'].min(), df['PRIMA DE RIESGO ACTUAL'].min())
         max_v = max(df['PRIMA DE RIESGO ANTERIOR'].max(), df['PRIMA DE RIESGO ACTUAL'].max())
-        
-        # Añadir un pequeño margen (10%) para que los puntos no queden pegados al borde
         margen = (max_v - min_v) * 0.1
-        if margen == 0: margen = 0.1 # Por si todos los valores son idénticos
-        lim_inf = max(0, min_v - margen) # Evitar bajar de 0 si las primas son positivas
+        if margen == 0: margen = 0.1
+        lim_inf = max(0, min_v - margen)
         lim_sup = max_v + margen
 
-        # Agregar línea de control dinámica visible en todo el nuevo rango de datos
         fig4.add_trace(
             go.Scatter(
                 x=[lim_inf, lim_sup],
@@ -788,10 +773,8 @@ with tab4:
                 line=dict(color='#475569', width=2, dash='dash')
             )
         )
-
-        # Posicionar anotaciones textualmente basadas en las proporciones de la gráfica (20% y 80%)
         fig4.add_annotation(
-            x=lim_inf + (lim_sup - lim_inf) * 0.2, 
+            x=lim_inf + (lim_sup - lim_inf) * 0.2,
             y=lim_sup - (lim_sup - lim_inf) * 0.15,
             text="<b>↑ Aumentó su Prima</b><br><span style='font-size:11px'>Mayor Siniestralidad</span>",
             showarrow=False,
@@ -802,7 +785,7 @@ with tab4:
             borderpad=6
         )
         fig4.add_annotation(
-            x=lim_sup - (lim_sup - lim_inf) * 0.2, 
+            x=lim_sup - (lim_sup - lim_inf) * 0.2,
             y=lim_inf + (lim_sup - lim_inf) * 0.15,
             text="<b>↓ Redujo su Prima</b><br><span style='font-size:11px'>Mejor Seguridad Integral</span>",
             showarrow=False,
@@ -812,25 +795,23 @@ with tab4:
             borderwidth=1,
             borderpad=6
         )
-
         fig4.update_traces(marker=dict(line=dict(width=1, color='rgba(0,0,0,0.5)')), selector=dict(mode='markers'))
         fig4.update_layout(
-            xaxis_range=[lim_inf, lim_sup], 
+            xaxis_range=[lim_inf, lim_sup],
             yaxis_range=[lim_inf, lim_sup],
             legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
         )
         configure_plotly_theme(fig4)
         st.plotly_chart(fig4, use_container_width=True)
-        
+
         st.markdown("<br><hr style='border-top:1px solid #E2E8F0;'/><br>", unsafe_allow_html=True)
-        
-        # NUEVA GRÁFICA: Prima Promedio por Sector
+
         st.markdown("##### 📊 Análisis de Riesgo por Sector Económico")
         st.markdown("Identifica qué actividades económicas concentran el mayor nivel de siniestralidad y, por tanto, las primas más altas.")
-        
+
         avg_prima_sector = df.groupby('ACTIVIDAD')['PRIMA DE RIESGO ACTUAL'].mean().reset_index()
         avg_prima_sector = avg_prima_sector.sort_values(by='PRIMA DE RIESGO ACTUAL', ascending=True)
-        
+
         fig4b = px.bar(
             avg_prima_sector,
             x='PRIMA DE RIESGO ACTUAL',
@@ -842,8 +823,9 @@ with tab4:
             text=avg_prima_sector['PRIMA DE RIESGO ACTUAL'].apply(lambda x: f"{x:.2f}%"),
             title="Prima de Riesgo Promedio por Sector"
         )
-        fig4b.update_traces(textposition='auto', textfont=dict(size=14, color='white', family="Outfit", weight='bold'))
-        fig4b.update_layout(yaxis=dict(tickmode='linear'))
+        fig4b.update_traces(textposition='outside', textfont=dict(size=14, color='#0F172A', family="Outfit", weight='bold'))
+        max_val = avg_prima_sector['PRIMA DE RIESGO ACTUAL'].max()
+        fig4b.update_layout(yaxis=dict(tickmode='linear'), xaxis=dict(range=[0, max_val * 1.15]))
         fig4b.update_coloraxes(showscale=False)
         configure_plotly_theme(fig4b)
         st.plotly_chart(fig4b, use_container_width=True)
@@ -866,15 +848,14 @@ with tab5:
     st.markdown('<div class="premium-card">', unsafe_allow_html=True)
     st.subheader("Promedio de Trabajadores Asegurados por Sector")
     st.markdown("Análisis representativo de la escala de mano de obra y empleabilidad directa por patrón.")
-    
+
     if check_col('ACTIVIDAD') and check_col('TRABAJADORES'):
         df['TRABAJADORES'] = pd.to_numeric(df['TRABAJADORES'], errors='coerce').fillna(0)
         avg_workers = df.groupby('ACTIVIDAD')['TRABAJADORES'].mean().reset_index()
         avg_workers = avg_workers.sort_values(by='TRABAJADORES', ascending=True).tail(15)
-        
+
         col1, col2 = st.columns([3, 2])
         with col1:
-            # CORRECCIÓN: Título explícito, etiquetas legibles
             fig5 = px.bar(
                 avg_workers,
                 x='TRABAJADORES',
@@ -883,18 +864,18 @@ with tab5:
                 color='TRABAJADORES',
                 color_continuous_scale=px.colors.sequential.Tealgrn,
                 labels={'TRABAJADORES': 'Promedio de Trabajadores por Empresa', 'ACTIVIDAD': 'Sector Económico'},
-                text=avg_workers['TRABAJADORES'].apply(lambda x: f"{x:.0f} emp."), # Muestra texto de empleados
+                text=avg_workers['TRABAJADORES'].apply(lambda x: f"{x:.0f} emp."),
                 title="Volumen Promedio de Plantilla Laboral"
             )
             fig5.update_traces(
-                textposition='auto', 
+                textposition='auto',
                 textfont=dict(size=13, color='white', weight="bold")
             )
-            fig5.update_layout(yaxis=dict(tickmode='linear')) # Asegura mostrar todas las actividades en el eje Y
+            fig5.update_layout(yaxis=dict(tickmode='linear'))
             fig5.update_coloraxes(showscale=False)
             configure_plotly_theme(fig5)
             st.plotly_chart(fig5, use_container_width=True)
-            
+
         with col2:
             st.markdown(
                 """
@@ -918,10 +899,10 @@ with tab6:
     st.markdown('<div class="premium-card">', unsafe_allow_html=True)
     st.subheader("Tipos de Movimientos Afiliatorios Oficiales")
     st.markdown("Distribución y evolución histórica de los trámites patronales administrados ante la ventanilla única.")
-    
+
     if check_col('TIPO DE MOVIMIENTO'):
         movimiento_counts = df['TIPO DE MOVIMIENTO'].value_counts()
-        
+
         tramite_map = {
             '1': '1 — Alta Patronal',
             '2': '2 — Cambio de Domicilio',
@@ -929,7 +910,7 @@ with tab6:
             '4': '4 — Renovación de TIP'
         }
         mov_index_mapped = [tramite_map.get(str(x), f"Trámite Código {x}") for x in movimiento_counts.index]
-        
+
         col1, col2 = st.columns([3, 2])
         with col1:
             fig6a = px.pie(
@@ -947,7 +928,7 @@ with tab6:
             )
             configure_plotly_theme(fig6a)
             st.plotly_chart(fig6a, use_container_width=True)
-            
+
         with col2:
             st.markdown(
                 """
@@ -963,14 +944,14 @@ with tab6:
                 """,
                 unsafe_allow_html=True
             )
-            
+
         st.markdown("<br><hr style='border-top:1px solid #E2E8F0;'/><br>", unsafe_allow_html=True)
-        
+
         st.markdown("##### Frecuencia e Historial de Movimientos por Año")
         if check_col('ULTIMO MOVIMIENTO FECHA ULTIMO MOV'):
             df['Año Movimiento'] = df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'].dt.year.astype('Int64')
             movimientos_por_año = df['Año Movimiento'].value_counts().sort_index()
-            
+
             if not movimientos_por_año.empty:
                 fig6b = px.line(
                     x=movimientos_por_año.index,
@@ -995,10 +976,10 @@ with tab7:
     st.markdown('<div class="premium-card">', unsafe_allow_html=True)
     st.subheader("Medio de Trámite: Transición Digital e Internet")
     st.markdown("Comparativa entre trámites virtuales mediante el escritorio digital vs. ventanilla física tradicional.")
-    
+
     if check_col('MEDIO'):
         medio_counts = df['MEDIO'].value_counts()
-        
+
         col1, col2 = st.columns([3, 2])
         with col1:
             fig7 = px.pie(
@@ -1016,7 +997,7 @@ with tab7:
             )
             configure_plotly_theme(fig7)
             st.plotly_chart(fig7, use_container_width=True)
-            
+
         with col2:
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown(
