@@ -321,7 +321,6 @@ st.markdown(
 # --- Generador / Cargador de Datos de Respaldo --- #
 @st.cache_data
 def load_data(file_path):
-    # Si el archivo físico existe, intentamos leerlo
     if os.path.exists(file_path):
         try:
             df = pd.read_excel(file_path)
@@ -330,7 +329,6 @@ def load_data(file_path):
                 df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'] = pd.to_datetime(df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'], errors='coerce')
             return df, False
         except Exception as e:
-            # En lugar de romper el código, procedemos a generar el fallback sintético
             pass
 
     # --- Generación de Datos Sintéticos --- #
@@ -685,7 +683,7 @@ with tab3:
                 orientation='h',
                 labels={'x': 'Cantidad Total de Patrones', 'y': 'Sector / Actividad Económica'},
                 color=actividad_counts.values,
-                color_continuous_scale=px.colors.sequential.Plotly3_r,
+                color_continuous_scale=['#60A5FA', '#1E3A8A'], # Armonía de color azul premium
                 text=actividad_counts.values,
                 title="<b>Volumen de Patrones por Actividad</b>"
             )
@@ -822,7 +820,7 @@ with tab4:
             y='ACTIVIDAD',
             orientation='h',
             color='PRIMA DE RIESGO ACTUAL',
-            color_continuous_scale=px.colors.sequential.OrRd,
+            color_continuous_scale=['#3B82F6', '#1E3A8A'], # Paleta de alto contraste premium (Azul a Marino)
             labels={'PRIMA DE RIESGO ACTUAL': 'Prima Promedio (%)', 'ACTIVIDAD': 'Sector Económico'},
             text=avg_prima_sector['PRIMA DE RIESGO ACTUAL'].apply(lambda x: f"{x:.2f}%"),
             title="<b>Prima de Riesgo Promedio por Sector</b>"
@@ -866,7 +864,7 @@ with tab5:
                 y='ACTIVIDAD',
                 orientation='h',
                 color='TRABAJADORES',
-                color_continuous_scale=px.colors.sequential.Tealgrn,
+                color_continuous_scale=['#0D9488', '#0F172A'], # Paleta elegante de verde-turquesa a oscuro
                 labels={'TRABAJADORES': 'Promedio de Trabajadores por Empresa', 'ACTIVIDAD': 'Sector Económico'},
                 text=avg_workers['TRABAJADORES'].apply(lambda x: f"{x:.0f} emp."),
                 title="<b>Volumen Promedio de Plantilla Laboral</b>"
