@@ -321,6 +321,7 @@ st.markdown(
 # --- Generador / Cargador de Datos de Respaldo --- #
 @st.cache_data
 def load_data(file_path):
+    # Si el archivo físico existe, intentamos leerlo
     if os.path.exists(file_path):
         try:
             df = pd.read_excel(file_path)
@@ -329,8 +330,10 @@ def load_data(file_path):
                 df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'] = pd.to_datetime(df['ULTIMO MOVIMIENTO FECHA ULTIMO MOV'], errors='coerce')
             return df, False
         except Exception as e:
-            st.error(f"Error al cargar el archivo Excel real: {e}")
+            # En lugar de romper el código, procedemos a generar el fallback sintético
+            pass
 
+    # --- Generación de Datos Sintéticos --- #
     import numpy as np
     np.random.seed(42)
     n_rows = 380
@@ -407,14 +410,15 @@ def load_data(file_path):
     return df_synthetic, True
 
 file_path = 'DATOS/PATRONES PROYECTO FINAL.xlsx'
-df, is_simulated = load_data(file_path)
+raw_df, is_simulated = load_data(file_path)
+df = raw_df.copy() # Evita CachedObjectMutationWarning al mutar el DataFrame fuera del caché
 
 if is_simulated:
     st.markdown(
         """
         <div class="simulated-banner">
             <span>💡</span>
-            <span><b>Modo Demostración Activo:</b> No se detectó el archivo en <code>DATOS/PATRONES PROYECTO FINAL.xlsx</code>.
+            <span><b>Modo Demostración Activo:</b> No se detectó o no se pudo cargar el archivo en <code>DATOS/PATRONES PROYECTO FINAL.xlsx</code>.
             Se ha inicializado una base de datos sintética de alta calidad con 380 registros simulados para evaluar la interfaz.</span>
         </div>
         """,
@@ -544,7 +548,7 @@ def configure_plotly_theme(fig):
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=20, r=20, t=60, b=40),
-        title_font=dict(size=20, color="#1E3A8A", family="Outfit", weight="bold"),
+        title_font=dict(size=20, color="#1E3A8A", family="Outfit"),
         legend=dict(
             font=dict(size=12, color="#0F172A"),
             bgcolor="rgba(255,255,255,0.9)",
@@ -554,12 +558,12 @@ def configure_plotly_theme(fig):
     )
     fig.update_xaxes(
         showgrid=True, gridcolor="#E2E8F0", linecolor="#CBD5E1",
-        title_font=dict(size=14, color="#1E3A8A", weight="bold"),
+        title_font=dict(size=14, color="#1E3A8A"),
         tickfont=dict(color="#0F172A", size=12, family="Outfit")
     )
     fig.update_yaxes(
         showgrid=True, gridcolor="#E2E8F0", linecolor="#CBD5E1",
-        title_font=dict(size=14, color="#1E3A8A", weight="bold"),
+        title_font=dict(size=14, color="#1E3A8A"),
         tickfont=dict(color="#0F172A", size=12, family="Outfit")
     )
     return fig
@@ -683,11 +687,11 @@ with tab3:
                 color=actividad_counts.values,
                 color_continuous_scale=px.colors.sequential.Plotly3_r,
                 text=actividad_counts.values,
-                title="Volumen de Patrones por Actividad"
+                title="<b>Volumen de Patrones por Actividad</b>"
             )
             fig3.update_traces(
                 textposition='auto',
-                textfont=dict(size=14, color='white', family="Outfit", weight="bold")
+                textfont=dict(size=14, color='white', family="Outfit")
             )
             fig3.update_layout(yaxis=dict(tickmode='linear'))
             fig3.update_coloraxes(showscale=False)
@@ -754,7 +758,7 @@ with tab4:
                 'PRIMA DE RIESGO ANTERIOR': 'Prima Año Pasado (%)',
                 'PRIMA DE RIESGO ACTUAL': 'Prima de Este Año (%)'
             },
-            title="Comparativa de Primas de Riesgo (Anterior vs Actual)"
+            title="<b>Comparativa de Primas de Riesgo (Anterior vs Actual)</b>"
         )
 
         min_v = min(df['PRIMA DE RIESGO ANTERIOR'].min(), df['PRIMA DE RIESGO ACTUAL'].min())
@@ -821,9 +825,9 @@ with tab4:
             color_continuous_scale=px.colors.sequential.OrRd,
             labels={'PRIMA DE RIESGO ACTUAL': 'Prima Promedio (%)', 'ACTIVIDAD': 'Sector Económico'},
             text=avg_prima_sector['PRIMA DE RIESGO ACTUAL'].apply(lambda x: f"{x:.2f}%"),
-            title="Prima de Riesgo Promedio por Sector"
+            title="<b>Prima de Riesgo Promedio por Sector</b>"
         )
-        fig4b.update_traces(textposition='outside', textfont=dict(size=14, color='#0F172A', family="Outfit", weight='bold'))
+        fig4b.update_traces(textposition='outside', textfont=dict(size=14, color='#0F172A', family="Outfit"))
         max_val = avg_prima_sector['PRIMA DE RIESGO ACTUAL'].max()
         fig4b.update_layout(yaxis=dict(tickmode='linear'), xaxis=dict(range=[0, max_val * 1.15]))
         fig4b.update_coloraxes(showscale=False)
@@ -865,11 +869,11 @@ with tab5:
                 color_continuous_scale=px.colors.sequential.Tealgrn,
                 labels={'TRABAJADORES': 'Promedio de Trabajadores por Empresa', 'ACTIVIDAD': 'Sector Económico'},
                 text=avg_workers['TRABAJADORES'].apply(lambda x: f"{x:.0f} emp."),
-                title="Volumen Promedio de Plantilla Laboral"
+                title="<b>Volumen Promedio de Plantilla Laboral</b>"
             )
             fig5.update_traces(
                 textposition='auto',
-                textfont=dict(size=13, color='white', weight="bold")
+                textfont=dict(size=13, color='white')
             )
             fig5.update_layout(yaxis=dict(tickmode='linear'))
             fig5.update_coloraxes(showscale=False)
@@ -918,7 +922,7 @@ with tab6:
                 names=mov_index_mapped,
                 hole=0.6,
                 color_discrete_sequence=px.colors.qualitative.Prism,
-                title="Proporción por Tipo de Trámite"
+                title="<b>Proporción por Tipo de Trámite</b>"
             )
             fig6a.update_traces(
                 textposition='inside',
@@ -959,7 +963,7 @@ with tab6:
                     markers=True,
                     labels={'x': 'Año de Gestión', 'y': 'Número de Trámites Realizados'},
                     color_discrete_sequence=['#8B5CF6'],
-                    title="Tendencia Histórica de Trámites (Por Año)"
+                    title="<b>Tendencia Histórica de Trámites (Por Año)</b>"
                 )
                 fig6b.update_traces(line=dict(width=3), marker=dict(size=8))
                 configure_plotly_theme(fig6b)
@@ -987,7 +991,7 @@ with tab7:
                 names=medio_counts.index,
                 hole=0.6,
                 color_discrete_sequence=['#2563EB', '#F43F5E'],
-                title="Trámites por Internet vs Ventanilla"
+                title="<b>Trámites por Internet vs Ventanilla</b>"
             )
             fig7.update_traces(
                 textposition='inside',
